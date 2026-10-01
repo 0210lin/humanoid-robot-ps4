@@ -1,14 +1,4 @@
-# 備份資料夾(外掛每次更新會自動備份在這裡,有 git 之後不需要進版本庫)
-backup/
-
-# 可以用「安裝.bat」重新下載的大檔案
-Tools_Arduino/arduino-cli.exe
-
-# 個人設定與個人圖片(每個人不同)
-Tools_MotorAdj/MotorAdjPlus.properties
-Tools_MotorAdj/background/
-
-# 編譯產生的暫存
+# 編譯產生的暫存(目前專案裡沒有這些檔案)
 *.class
 *.tmp
 *.hex

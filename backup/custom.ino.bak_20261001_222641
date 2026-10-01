@@ -1,0 +1,395 @@
+/*
+custom.ino  -- 機器人「按鍵 -> 動作」對照表(你最常改的檔案)
+
+按鍵值由 ESP32 的 PS4 橋接程式送來(定義見 pad.h)。
+SetFrameRun(幀編號, 時間ms) 會播放 motor.h 裡的一個動作幀。
+幀編號對應 MotorAdj 調整工具裡的 frame 編號。
+
+流程:
+  開機 -> 等待按下 START(PS4 的 Options) -> 進入遙控模式
+  PS4 的 Share 鍵 = STOP,所有馬達放鬆
+  接上電腦的 MotorAdj 工具時,自動離開遙控模式
+*/
+
+#include "motor.h"
+#include "custom.h"
+#include "pad.h"
+
+void custom_setup()
+{
+  pad_init();
+}
+
+void custom_loop()
+{
+  uart_disableMotor();
+
+  // 等待 START 才開始動作(期間如果接上電腦,就交給電腦處理)
+  while (pad_getKey() != PAD_BTN_START) {
+    if (uart_isConnectToPC() != 0) {
+      return;
+    }
+  }
+
+  while (uart_isUartMode == 0) {
+    custom_gamepadKeyFun_kondo();
+    custom_stickFun();
+
+    if (uart_isConnectToPC() != 0) {
+      return;
+    }
+  }
+}
+
+// 蘑菇頭(搖桿)範例:目前都沒有動作,要用時把 // 拿掉,換成你的幀編號即可。
+// 三組資料互相獨立:
+//   pad_getKey()              一般按鍵(下面的 custom_gamepadKeyFun_kondo)
+//   pad_getStick(軸)          推搖桿,-128 ~ 127,Y 向上為正
+//   pad_getStickButtons()     按下搖桿 L3 / R3
+//
+// 每支搖桿有兩組判斷,結果都存成變數(1 = 是,0 = 不是):
+//
+//   【半邊】LS_UP / LS_DOWN / LS_LEFT / LS_RIGHT(右搖桿 RS_ 開頭)
+//      往那個方向推過死區就是 1,斜推時相鄰兩個方向會同時是 1(例如右上 = UP 和 RIGHT)。
+//      LS_UP 就是「上半邊」(右上和左上都算)。適合用 if 判斷,也給 R2 / L2 使用。
+//
+//   【單一方向】LS_DIR / RS_DIR(給 switch 用)
+//      同一時間只會是一個:DIR_CENTER / DIR_UP / DIR_DOWN / DIR_LEFT / DIR_RIGHT
+//      斜推時,哪個軸推得多就算哪個方向。
+//
+//   LS_CENTER / RS_CENTER:X、Y 都在死區內(沒推)
+#define STICK_DEAD  60          // 死區大小(0~127),愈大愈要推多一點才算
+
+uint8_t LS_UP, LS_DOWN, LS_LEFT, LS_RIGHT, LS_CENTER;
+uint8_t RS_UP, RS_DOWN, RS_LEFT, RS_RIGHT, RS_CENTER;
+
+enum { DIR_CENTER = 0, DIR_UP, DIR_DOWN, DIR_LEFT, DIR_RIGHT };
+uint8_t LS_DIR, RS_DIR;
+
+// 讀搖桿,更新上面所有變數
+void custom_stickUpdate()
+{
+  int lx = pad_getStick(PAD_LX);      // 左(-) 右(+)
+  int ly = pad_getStick(PAD_LY);      // 下(-) 上(+)
+  int rx = pad_getStick(PAD_RX);
+  int ry = pad_getStick(PAD_RY);
+
+  // 半邊
+  LS_RIGHT = (lx >=  STICK_DEAD);
+  LS_LEFT  = (lx <= -STICK_DEAD);
+  LS_UP    = (ly >=  STICK_DEAD);
+  LS_DOWN  = (ly <= -STICK_DEAD);
+  LS_CENTER = !(LS_UP || LS_DOWN || LS_LEFT || LS_RIGHT);
+
+  RS_RIGHT = (rx >=  STICK_DEAD);
+  RS_LEFT  = (rx <= -STICK_DEAD);
+  RS_UP    = (ry >=  STICK_DEAD);
+  RS_DOWN  = (ry <= -STICK_DEAD);
+  RS_CENTER = !(RS_UP || RS_DOWN || RS_LEFT || RS_RIGHT);
+
+  // 單一方向(哪個軸推得多就算哪個)
+  if (LS_CENTER)                    LS_DIR = DIR_CENTER;
+  else if (abs(lx) >= abs(ly))      LS_DIR = (lx >= 0) ? DIR_RIGHT : DIR_LEFT;
+  else                              LS_DIR = (ly >= 0) ? DIR_UP : DIR_DOWN;
+
+  if (RS_CENTER)                    RS_DIR = DIR_CENTER;
+  else if (abs(rx) >= abs(ry))      RS_DIR = (rx >= 0) ? DIR_RIGHT : DIR_LEFT;
+  else                              RS_DIR = (ry >= 0) ? DIR_UP : DIR_DOWN;
+}
+
+void custom_stickFun()
+{
+  custom_stickUpdate();
+
+  // ---------- 按下搖桿(L3 / R3)----------
+  switch (pad_getStickButtons()) {
+    case PAD_L3:                    // 只按 L3(左搖桿按下)
+      do {
+        // SetFrameRun(1, 100);      // 動作 1
+        // SetFrameRun(1, 90);       // 動作 2
+      } while (pad_getStickButtons() == PAD_L3 && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case PAD_R3:                    // 只按 R3(右搖桿按下)
+      do {
+        // SetFrameRun(1, 100);      // 動作 1
+        // SetFrameRun(1, 90);       // 動作 2
+      } while (pad_getStickButtons() == PAD_R3 && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case PAD_L3 | PAD_R3:           // 兩個一起按
+      do {
+        // SetFrameRun(1, 100);      // 動作 1
+        // SetFrameRun(1, 90);       // 動作 2
+      } while (pad_getStickButtons() == (PAD_L3 | PAD_R3) && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    default:                        // 都沒按
+      break;
+  }
+
+  // ---------- 左搖桿 4 個方向 ----------
+  // 連續動作:用 do while,條件放「搖桿還在這個方向、而且沒按其他按鍵」,
+  // 內層一定要呼叫 custom_stickUpdate(),不然出不來。
+  switch (LS_DIR) {
+    case DIR_UP:
+      do {
+        // SetFrameRun(1, 100);      // 動作 1
+        // SetFrameRun(1, 90);       // 動作 2
+        custom_stickUpdate();
+      } while (LS_DIR == DIR_UP && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case DIR_DOWN:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (LS_DIR == DIR_DOWN && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case DIR_LEFT:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (LS_DIR == DIR_LEFT && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case DIR_RIGHT:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (LS_DIR == DIR_RIGHT && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    default:                        // DIR_CENTER:沒推
+      break;
+  }
+
+  // ---------- 右搖桿 4 個方向 ----------
+  switch (RS_DIR) {
+    case DIR_UP:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (RS_DIR == DIR_UP && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case DIR_DOWN:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (RS_DIR == DIR_DOWN && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case DIR_LEFT:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (RS_DIR == DIR_LEFT && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    case DIR_RIGHT:
+      do {
+        // SetFrameRun(1, 100);
+        // SetFrameRun(1, 90);
+        custom_stickUpdate();
+      } while (RS_DIR == DIR_RIGHT && pad_getKey() == 0);
+      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      break;
+    default:                        // DIR_CENTER:沒推
+      break;
+  }
+}
+
+int16_t custom_gamepadKeyFun_kondo()
+{
+  uint16_t key = pad_getKey();
+
+  if (key != PAD_BTN_NONE) {   // 沒按鍵就什麼都不做
+    switch (key) {
+
+      // ---------- 移動 ----------
+      case PAD_BTN_UP:          // 前進
+        SetFrameRun(2, 100);
+        SetFrameRun(3, 100);
+        do {
+          SetFrameRun(4, 90);
+          SetFrameRun(5, 110);
+          SetFrameRun(6, 90);
+          SetFrameRun(7, 110);
+        } while (pad_getKey() > 0);
+        SetFrameRun(7, 50);
+        SetFrameRun(4, 65);
+        SetFrameRun(1, 10);
+        break;
+
+      case PAD_BTN_DOWN: {      // 後退
+        uint8_t jumpFlag = 0;
+        SetFrameRun(2, 80);
+        SetFrameRun(3, 80);
+        do {
+          SetFrameRun(8, 70);
+          SetFrameRun(9, 110);
+          if (pad_getKey() != PAD_BTN_DOWN) {
+            jumpFlag = 1;
+            break;
+          }
+          SetFrameRun(10, 70);
+          SetFrameRun(11, 110);
+        } while (pad_getKey() == PAD_BTN_DOWN);
+
+        if (jumpFlag == 1) {
+          SetFrameRun(11, 20);
+          SetFrameRun(10, 85);
+        } else {
+          SetFrameRun(9, 20);
+          SetFrameRun(8, 85);
+        }
+        SetFrameRun(2, 150);
+        SetFrameRun(1, 10);
+        break;
+      }
+
+      case PAD_BTN_RIGHT:       // 右轉
+        do {
+          SetFrameRun(14, 90);
+          SetFrameRun(12, 80);
+        } while (pad_getKey() > 0);
+        SetFrameRun(12, 50);
+        SetFrameRun(1, 100);
+        break;
+
+      case PAD_BTN_LEFT:        // 左轉
+        do {
+          SetFrameRun(13, 90);
+          SetFrameRun(12, 80);
+        } while (pad_getKey() > 0);
+        SetFrameRun(12, 50);
+        SetFrameRun(1, 100);
+        break;
+
+      // ---------- 單鍵動作 ----------
+      case PAD_BTN_CROSS:
+        SetFrameRun(35, 100);
+        do {
+          SetFrameRun(36, 20);
+        } while (pad_getKey() > 0);
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_CIRCLE:
+        SetFrameRun(23, 200);
+        do {
+          SetFrameRun(24, 20);
+        } while (pad_getKey() > 0);
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_SQUARE:
+        SetFrameRun(25, 200);
+        do {
+          SetFrameRun(26, 20);
+        } while (pad_getKey() > 0);
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_R1:
+        SetFrameRun(27, 130);
+        do {
+          SetFrameRun(28, 20);
+        } while (pad_getKey() > 0);
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_L1:
+        SetFrameRun(29, 130);
+        do {
+          SetFrameRun(30, 20);
+        } while (pad_getKey() > 0);
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_L2:               // L2:按住期間同時看左、右搖桿有沒有往上
+        do {
+          custom_stickUpdate();      // 重新讀搖桿,更新 LS_UP / RS_UP ...
+
+          if (LS_UP) {               // L2 + 左搖桿往上
+            do {
+              // SetFrameRun(1, 100);      // 動作 1
+              // SetFrameRun(1, 90);       // 動作 2
+              custom_stickUpdate();        // 內層要自己更新搖桿,不然出不來
+            } while (pad_getKey() > 0 && LS_UP);
+
+          } else if (RS_UP) {        // L2 + 右搖桿往上(左搖桿沒往上時才會判斷到這裡)
+            do {
+              // SetFrameRun(1, 100);      // 動作 1
+              // SetFrameRun(1, 90);       // 動作 2
+              custom_stickUpdate();
+            } while (pad_getKey() > 0 && RS_UP);
+
+          } else {                   // 兩支搖桿都沒往上:原本 L2 的動作
+            do {
+              SetFrameRun(15, 100);
+              SetFrameRun(16, 90);
+              custom_stickUpdate();
+            } while (pad_getKey() > 0 && !LS_UP && !RS_UP);
+          }
+        } while (pad_getKey() > 0);
+        SetFrameRun(15, 100);
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_R2:               // R2:按住期間同時看左、右搖桿有沒有往上
+        do {
+          custom_stickUpdate();      // 重新讀搖桿,更新 LS_UP / RS_UP ...
+
+          if (LS_UP) {               // R2 + 左搖桿往上
+            do {
+              // SetFrameRun(1, 100);      // 動作 1
+              // SetFrameRun(1, 90);       // 動作 2
+              custom_stickUpdate();        // 內層要自己更新搖桿,不然出不來
+            } while (pad_getKey() > 0 && LS_UP);
+
+          } else if (RS_UP) {        // R2 + 右搖桿往上(左搖桿沒往上時才會判斷到這裡)
+            do {
+              // SetFrameRun(1, 100);      // 動作 1
+              // SetFrameRun(1, 90);       // 動作 2
+              custom_stickUpdate();
+            } while (pad_getKey() > 0 && RS_UP);
+
+          } else {                   // 兩支搖桿都沒往上:原本 R2 的動作
+            do {
+              SetFrameRun(15, 100);
+              SetFrameRun(17, 90);
+              custom_stickUpdate();
+            } while (pad_getKey() > 0 && !LS_UP && !RS_UP);
+          }
+        } while (pad_getKey() > 0);
+        SetFrameRun(15, 100);
+        SetFrameRun(1, 150);
+        break;
+
+      // ---------- 系統 ----------
+      case PAD_BTN_STOP:             // PS4 Share:馬達放鬆
+        uart_disableMotor();
+        break;
+
+      case PAD_BTN_START:            // PS4 Options:回站姿
+        SetFrameRun(1, 500);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  delay(10);
+  return 0;
+}
+ 
