@@ -33,6 +33,7 @@ public class Background {
         int scaledW = -1, scaledH = -1;
         Color color;             // 純色背景(沒有圖片時;有圖片時是留邊的顏色)
         int dim = 75;            // 遮罩濃度 0~100
+        boolean tech = false;    // 科技風外觀且沒有自訂背景時,畫內建的科技風背景
         String mode = "cover";   // cover = 蓋滿(裁切)、fit = 完整顯示(留邊)、stretch = 拉伸
         int zoom = 100;          // 縮放 100~300(%)
         int px = 50, py = 50;    // 位置 0~100(50 = 置中)
@@ -70,11 +71,56 @@ public class Background {
                 g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, Math.min(100, dim)) / 100f));
                 g.setColor(base);
                 g.fillRect(0, 0, w, h);
+            } else if (tech && color == null) {
+                paintTech(g, w, h);
             } else {
                 g.setColor(color != null ? color : base);
                 g.fillRect(0, 0, w, h);
             }
             g.dispose();
+        }
+
+        /** 科技風內建背景:深藍漸層、角落光暈、細網格、四角的青色邊框 */
+        void paintTech(Graphics2D g, int w, int h) {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            // 底色漸層
+            g.setPaint(new java.awt.GradientPaint(0, 0, new Color(0x06, 0x0B, 0x16), w, h, new Color(0x0E, 0x1C, 0x36)));
+            g.fillRect(0, 0, w, h);
+            // 左上青色光暈、右下藍紫光暈
+            float r1 = Math.max(w, h) * 0.75f;
+            g.setPaint(new java.awt.RadialGradientPaint(0, 0, r1, new float[] {0f, 1f},
+                    new Color[] {new Color(0, 0xE5, 0xFF, 38), new Color(0, 0xE5, 0xFF, 0)}));
+            g.fillRect(0, 0, w, h);
+            g.setPaint(new java.awt.RadialGradientPaint(w, h, r1, new float[] {0f, 1f},
+                    new Color[] {new Color(0x6A, 0x4C, 0xFF, 34), new Color(0x6A, 0x4C, 0xFF, 0)}));
+            g.fillRect(0, 0, w, h);
+            // 細網格(每 32 像素一條,每 160 像素一條較亮)
+            for (int x = 0; x < w; x += 32) {
+                g.setColor(new Color(0, 0xB8, 0xD4, x % 160 == 0 ? 34 : 14));
+                g.drawLine(x, 0, x, h);
+            }
+            for (int y = 0; y < h; y += 32) {
+                g.setColor(new Color(0, 0xB8, 0xD4, y % 160 == 0 ? 34 : 14));
+                g.drawLine(0, y, w, y);
+            }
+            // 大格子交叉點的小方塊
+            g.setColor(new Color(0, 0xE5, 0xFF, 70));
+            for (int x = 0; x < w; x += 160) {
+                for (int y = 0; y < h; y += 160) {
+                    g.fillRect(x - 1, y - 1, 3, 3);
+                }
+            }
+            // 上緣光線
+            g.setPaint(new java.awt.GradientPaint(0, 0, new Color(0, 0xE5, 0xFF, 0), w / 2f, 0, new Color(0, 0xE5, 0xFF, 160), true));
+            g.fillRect(0, 0, w, 2);
+            // 四角的邊框
+            g.setColor(new Color(0, 0xE5, 0xFF, 190));
+            g.setStroke(new java.awt.BasicStroke(2f));
+            int m = 6, L = 26;
+            g.drawLine(m, m, m + L, m);         g.drawLine(m, m, m, m + L);
+            g.drawLine(w - m, m, w - m - L, m); g.drawLine(w - m, m, w - m, m + L);
+            g.drawLine(m, h - m, m + L, h - m); g.drawLine(m, h - m, m, h - m - L);
+            g.drawLine(w - m, h - m, w - m - L, h - m); g.drawLine(w - m, h - m, w - m, h - m - L);
         }
     }
 
@@ -146,7 +192,12 @@ public class Background {
                     img = ImageIO.read(ff);
                 }
             }
-            boolean enabled = img != null || col != null;
+            boolean techBg = Theme.tech();      // 科技風:強制使用內建背景(自訂圖片 / 純色的設定仍然保留,切回其他外觀就會顯示)
+            if (techBg) {
+                img = null;
+                col = null;
+            }
+            boolean enabled = img != null || col != null || techBg;
 
             JLayeredPane lp = f.getLayeredPane();
             if (enabled) {
@@ -162,6 +213,7 @@ public class Background {
                 pane.img = img;
                 pane.scaled = null;
                 load(pane);
+                pane.tech = techBg;
                 pane.setBounds(0, 0, lp.getWidth(), lp.getHeight());
             } else if (pane != null) {
                 lp.remove(pane);
@@ -176,7 +228,7 @@ public class Background {
 
     /** 面板改成透明(背景才看得到);關閉時還原原本的不透明設定 */
     static void makeTransparent(Component c, boolean on) {
-        if (c instanceof JPanel || c instanceof JTabbedPane) {
+        if (c instanceof JPanel || c instanceof JTabbedPane || c instanceof javax.swing.JLabel) {
             JComponent jc = (JComponent) c;
             if (on) {
                 if (jc.getClientProperty("plusOrigOpaque") == null) {

@@ -173,7 +173,8 @@ public class Plus {
             JButton conn = findExact("串口連接", "Connect");
             if (conn != null) {
                 Container sp = conn.getParent();
-                JButton bgBtn = new JButton("背景…");
+                bgButton = new JButton("背景…");
+                final JButton bgBtn = bgButton;
                 bgBtn.setBounds(conn.getX(), 400, 234, 27);
                 bgBtn.setToolTipText("自訂背景:拖入 JPG / PNG 圖片,有預覽");
                 bgBtn.addActionListener(new java.awt.event.ActionListener() {
@@ -182,6 +183,30 @@ public class Plus {
                     }
                 });
                 sp.add(bgBtn);
+
+                // 外觀選單:放在「背景…」的下面,選了馬上換,並記住
+                final String[] themeKeys = {"light", "dark", "tech", "classic"};
+                final String[] themeNames = {"淺色(預設)", "深色", "科技風", "原本的樣子"};
+                themeLabelRef = new javax.swing.JLabel("外觀");
+                javax.swing.JLabel themeLabel = themeLabelRef;
+                themeLabel.setBounds(conn.getX(), 438, 60, 27);
+                sp.add(themeLabel);
+                final javax.swing.JComboBox<String> themeBox = new javax.swing.JComboBox<String>(themeNames);
+                themeBoxRef = themeBox;
+                for (int i = 0; i < themeKeys.length; i++) {
+                    if (themeKeys[i].equals(Theme.name())) themeBox.setSelectedIndex(i);
+                }
+                themeBox.setBounds(conn.getX() + 66, 438, 168, 27);
+                themeBox.addActionListener(new java.awt.event.ActionListener() {
+                    public void actionPerformed(java.awt.event.ActionEvent e) {
+                        String key = themeKeys[Math.max(0, themeBox.getSelectedIndex())];
+                        if (syncing || key.equals(Theme.current)) return;
+                        Settings.p.setProperty("theme", key.equals("light") ? "" : key);
+                        try { Settings.save(); } catch (Exception ex) { ex.printStackTrace(); }
+                        Theme.apply(key);
+                    }
+                });
+                sp.add(themeBox);
                 sp.repaint();
 
                 // 右下角的三張卡片:機器人狀態、Micro 空間用量、環境檢查
@@ -189,6 +214,13 @@ public class Plus {
                     StatusCards.install(sp);
                 } catch (Throwable t2) {
                     t2.printStackTrace();
+                }
+
+                // 「設定」分頁重新排版:隱藏用不到的感測器,其餘分成「連線」「馬達位置範圍」「外觀」三個區塊
+                try {
+                    SettingsLayout.install(sp);
+                } catch (Throwable t3) {
+                    t3.printStackTrace();
                 }
             }
         } catch (Throwable t) {
@@ -219,6 +251,13 @@ public class Plus {
         // 人偶模式:進入時維持原本的勾選與顏色,並標示被放鬆的那顆
         try {
             DummyMode.install(p);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
+        // 每顆馬達各自的位置範圍(預設 ±900)
+        try {
+            Limits.install(p);
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -260,6 +299,24 @@ public class Plus {
     }
 
     static final java.util.List<JButton> updateButtons = new java.util.ArrayList<JButton>();
+    static JButton bgButton;                       // 「設定」分頁的「背景…」按鈕
+    static javax.swing.JLabel themeLabelRef;       // 「外觀」文字
+    static javax.swing.JComboBox<String> themeBoxRef;   // 外觀下拉選單
+
+    static boolean syncing = false;
+
+    /** 外觀被別的方式改變時(例如「路徑設定」視窗),讓「設定」分頁的外觀選單顯示一致 */
+    static void syncThemeBox(String name) {
+        if (themeBoxRef == null) return;
+        String[] keys = {"light", "dark", "tech", "classic"};
+        for (int i = 0; i < keys.length; i++) {
+            if (keys[i].equals(name) && themeBoxRef.getSelectedIndex() != i) {
+                syncing = true;
+                themeBoxRef.setSelectedIndex(i);
+                syncing = false;
+            }
+        }
+    }
 
     /** 兩個「更新到機器人」按鈕(馬達參數分頁、動作程式分頁)共用 */
     static void triggerUpdate() {

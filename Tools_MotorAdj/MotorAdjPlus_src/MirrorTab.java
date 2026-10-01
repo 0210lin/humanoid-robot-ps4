@@ -23,7 +23,7 @@ import javax.swing.event.TableModelListener;
  * 「鏡像」分頁 + 「馬達參數」分頁的鏡像按鈕。
  * 鏡像只改畫面上的工作資料(MotorPosDataTmp),不寫入任何幀;
  * 要存起來,請自己輸入幀編號再按原本的「寫入」。
- * 反向的中心固定 1500(新值 = 3000 − 對方的值),偏掉的部分請用「馬達偏移量」調整。
+ * 反向的中心固定 1500(新值 = 3000 - 對方的值),偏掉的部分請用「馬達偏移量」調整。
  */
 public class MirrorTab {
 
@@ -117,11 +117,12 @@ public class MirrorTab {
             int i = p[0], j = p[1], rev = p[2], mode = p[3];
             if (i == j) {
                 // 同一顆馬達:反向 = 自己左右反轉;同向沒有作用
-                if (rev == 1) tmp[i][1] = clamp(CENTER2 - snap[i][1], min, max);
+                int[] li = Limits.absRange(i, min, max);
+                if (rev == 1) tmp[i][1] = clamp(CENTER2 - snap[i][1], li[0], li[1]);
                 continue;
             }
-            if (mode == 0 || mode == 2) setFrom(tmp[i], snap[j], rev, min, max);   // A 取 B 的鏡像
-            if (mode == 0 || mode == 1) setFrom(tmp[j], snap[i], rev, min, max);   // B 取 A 的鏡像
+            if (mode == 0 || mode == 2) setFrom(tmp[i], snap[j], rev, Limits.absRange(i, min, max));   // A 取 B 的鏡像
+            if (mode == 0 || mode == 1) setFrom(tmp[j], snap[i], rev, Limits.absRange(j, min, max));   // B 取 A 的鏡像
         }
 
         // 重新整理畫面(也會把目前姿勢送給機器人)
@@ -131,10 +132,10 @@ public class MirrorTab {
         return null;
     }
 
-    /** dst 取 src 的內容:啟用、時間照抄;位置同向照抄、反向用 3000 − 位置 */
-    static void setFrom(int[] dst, int[] src, int rev, int min, int max) {
+    /** dst 取 src 的內容:啟用、時間照抄;位置同向照抄、反向用 3000 - 位置 */
+    static void setFrom(int[] dst, int[] src, int rev, int[] lim) {
         dst[0] = src[0];
-        dst[1] = clamp(rev == 1 ? CENTER2 - src[1] : src[1], min, max);
+        dst[1] = clamp(rev == 1 ? CENTER2 - src[1] : src[1], lim[0], lim[1]);
         dst[2] = src[2];
     }
 
@@ -186,7 +187,7 @@ public class MirrorTab {
         JLabel help = new JLabel("<html><b>設定哪兩顆馬達要鏡像。</b>設好後,到「馬達參數」分頁按「鏡像」按鈕,"
                 + "<b>畫面上這一幀</b>的參數就會照下表變成鏡像(機器人連著的話,馬達也會跟著動)。<br>"
                 + "<b>不會寫入</b>:請自己輸入要存的幀編號,再按原本的「寫入」。不滿意可以按「讀出」還原。<br><br>"
-                + "・<b>方向</b>:同向 = 位置照抄;反向 = 以 1500 為中心反轉(新位置 = 3000 − 對方的位置)。偏掉的部分請用「馬達偏移量」調。<br>"
+                + "・<b>方向</b>:同向 = 位置照抄;反向 = 以 1500 為中心反轉(新位置 = 3000 - 對方的位置)。偏掉的部分請用「馬達偏移量」調。<br>"
                 + "・<b>模式</b>:互換 = A、B 對調;A→B = 只有 B 變成 A 的鏡像;B→A = 只有 A 變成 B 的鏡像。啟用與時間(速度)會一起帶過去。<br>"
                 + "・<b>單顆自己鏡像</b>:A、B 選同一顆、方向選「反向」,這一顆會自己左右反轉。<br>"
                 + "・同一顆馬達請不要出現在兩組啟用的配對裡。馬達編號 = 畫面上的 Ch 編號。</html>");

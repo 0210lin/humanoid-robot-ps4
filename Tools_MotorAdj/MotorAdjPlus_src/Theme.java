@@ -22,10 +22,35 @@ import javax.swing.plaf.FontUIResource;
 public class Theme {
 
     static final String FONT = "Microsoft JhengHei UI";
-    static final Color GREEN = new Color(0x2E, 0x9E, 0x5B);
-    static final Color RED = new Color(0xD6, 0x45, 0x45);
+    // 配色:依外觀切換(淺色、深色用預設;科技風用霓虹色)
+    static Color GREEN = new Color(0x2E, 0x9E, 0x5B);
+    static Color RED = new Color(0xD6, 0x45, 0x45);
+    static Color ACCENT = new Color(0x3A, 0x7C, 0xC4);
 
     static String current = "classic";
+
+    static boolean tech() {
+        return "tech".equals(current);
+    }
+
+    /** 依外觀設定配色(馬達按鈕、捲軸、狀態卡片都會用到) */
+    static void setPalette(String name) {
+        if ("tech".equals(name)) {
+            GREEN = new Color(0x00, 0xE6, 0x76);
+            RED = new Color(0xFF, 0x3D, 0x5A);
+            ACCENT = new Color(0x00, 0xB8, 0xD4);
+            StatusCards.OK = new Color(0x00, 0xE6, 0x76);
+            StatusCards.WARN = new Color(0xFF, 0xB3, 0x00);
+            StatusCards.BAD = new Color(0xFF, 0x4D, 0x6D);
+        } else {
+            GREEN = new Color(0x2E, 0x9E, 0x5B);
+            RED = new Color(0xD6, 0x45, 0x45);
+            ACCENT = new Color(0x3A, 0x7C, 0xC4);
+            StatusCards.OK = new Color(0x2E, 0x9E, 0x5B);
+            StatusCards.WARN = new Color(0xD9, 0x82, 0x00);
+            StatusCards.BAD = new Color(0xD6, 0x45, 0x45);
+        }
+    }
 
     static String name() {
         String t = Settings.raw("theme");
@@ -51,15 +76,44 @@ public class Theme {
             if ("classic".equals(name)) {
                 UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             } else {
+                setPalette(name);
                 Map<String, String> extra = new HashMap<String, String>();
-                extra.put("@accentColor", "#2F6FED");
+                if ("tech".equals(name)) {
+                    // 科技風:深藍黑底、青色霓虹重點色、細邊框
+                    extra.put("@accentColor", "#00E5FF");
+                    extra.put("@background", "#0B1220");
+                    extra.put("@foreground", "#CFEFFF");
+                    extra.put("@componentBackground", "#0F1B2E");
+                    extra.put("@buttonBackground", "#12233B");
+                    extra.put("@selectionBackground", "#00B8D4");
+                    extra.put("@selectionForeground", "#001018");
+                    extra.put("Component.borderColor", "#1E5A78");
+                    extra.put("Component.focusedBorderColor", "#00E5FF");
+                    extra.put("Button.borderColor", "#1E7A96");
+                    extra.put("Button.hoverBorderColor", "#00E5FF");
+                    extra.put("TextField.borderColor", "#1E5A78");
+                    extra.put("TabbedPane.underlineColor", "#00E5FF");
+                    extra.put("TabbedPane.background", "#0B1220");
+                    extra.put("TabbedPane.selectedBackground", "#0F1B2E");
+                    extra.put("TabbedPane.hoverColor", "#12233B");
+                    extra.put("ProgressBar.background", "#12233B");
+                    extra.put("ProgressBar.foreground", "#00E5FF");
+                    extra.put("ScrollBar.thumb", "#1E7A96");
+                    extra.put("ScrollBar.track", "#0F1B2E");
+                    extra.put("TitledBorder.titleColor", "#00E5FF");
+                    extra.put("Separator.foreground", "#1E5A78");
+                    extra.put("ToolTip.background", "#0F1B2E");
+                    extra.put("ToolTip.foreground", "#CFEFFF");
+                } else {
+                    extra.put("@accentColor", "#2F6FED");
+                }
                 com.formdev.flatlaf.FlatLaf.setGlobalExtraDefaults(extra);
                 UIManager.put("Button.arc", 10);
                 UIManager.put("Component.arc", 10);
                 UIManager.put("TextComponent.arc", 8);
                 UIManager.put("ScrollBar.thumbArc", 999);
                 // 捲軸兩端的箭頭:實心三角形 + 醒目的顏色(預設又細又淡,不容易看到)
-                boolean darkMode = "dark".equals(name);
+                boolean darkMode = "dark".equals(name) || "tech".equals(name);
                 Color arrow = darkMode ? new Color(0xA9, 0xCD, 0xF5) : new Color(0x1F, 0x4E, 0x79);
                 UIManager.put("ScrollBar.arrowType", "triangle");
                 UIManager.put("ScrollBar.buttonArrowColor", arrow);
@@ -68,12 +122,18 @@ public class Theme {
                 UIManager.put("ScrollBar.thumbInsets", new java.awt.Insets(2, 2, 2, 2));
                 UIManager.put("TabbedPane.showTabSeparators", Boolean.TRUE);
                 UIManager.put("TabbedPane.tabHeight", 32);
-                if ("dark".equals(name)) {
+                if ("dark".equals(name) || "tech".equals(name)) {
                     com.formdev.flatlaf.FlatDarkLaf.setup();
                 } else {
                     com.formdev.flatlaf.FlatLightLaf.setup();
                 }
                 setFonts(13);
+                if ("tech".equals(name)) {
+                    // 數字欄位用等寬字型,像儀表板的讀數
+                    FontUIResource mono = new FontUIResource(new Font("Consolas", Font.BOLD, 14));
+                    UIManager.put("FormattedTextField.font", mono);
+                    UIManager.put("TitledBorder.border", javax.swing.BorderFactory.createLineBorder(new Color(0x1E, 0x7A, 0x96)));
+                }
             }
             current = name;
             for (Window w : Window.getWindows()) {
@@ -83,15 +143,16 @@ public class Theme {
             }
             Background.apply();   // 遮罩的顏色會跟著外觀改變
             Steps.repaintAll();   // 馬達的 -/+ 按鈕重新上色
+            Plus.syncThemeBox(name);
         } catch (Throwable t) {
             t.printStackTrace();
         }
     }
 
-    static final Color ACCENT = new Color(0x3A, 0x7C, 0xC4);
 
     /** 馬達捲軸:未啟用(原本寫死的淺灰色)依外觀換成合適的灰色 */
     static Color trackOff() {
+        if ("tech".equals(current)) return new Color(0x16, 0x2A, 0x44);
         return "dark".equals(current) ? new Color(0x4B, 0x50, 0x58) : new Color(0xDD, 0xE2, 0xE9);
     }
 
@@ -147,6 +208,10 @@ public class Theme {
                     b.setBackground((Color) orig);
                     b.setForeground(Color.BLACK);
                 }
+            } else if (b.getClientProperty("plusOrigBg") instanceof Color) {
+                // 已經被我們上過色:依目前外觀的綠 / 紅重新上色
+                Color orig = (Color) b.getClientProperty("plusOrigBg");
+                style(b, Color.YELLOW.equals(orig) ? GREEN : RED);
             } else if (Color.YELLOW.equals(bg)) {
                 b.putClientProperty("plusOrigBg", Color.YELLOW);
                 style(b, GREEN);

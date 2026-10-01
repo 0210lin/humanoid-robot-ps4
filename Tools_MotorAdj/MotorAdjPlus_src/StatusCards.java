@@ -26,11 +26,12 @@ import javax.swing.SwingUtilities;
  */
 public class StatusCards {
 
-    static final Color OK = new Color(0x2E, 0x9E, 0x5B);
-    static final Color WARN = new Color(0xD9, 0x82, 0x00);
-    static final Color BAD = new Color(0xD6, 0x45, 0x45);
+    static Color OK = new Color(0x2E, 0x9E, 0x5B);
+    static Color WARN = new Color(0xD9, 0x82, 0x00);
+    static Color BAD = new Color(0xD6, 0x45, 0x45);
 
     static JPanel host;
+    static JPanel card1, card2, card3;   // 三張卡片(版面程式會調整位置)
     static JLabel stPort, stAdj, stSync, stLast, stFiles;
     static JProgressBar flashBar, ramBar;
     static JLabel flashTxt, ramTxt, frameTxt, planTxt, planTxt2;
@@ -68,6 +69,17 @@ public class StatusCards {
         p.add(v, c);
     }
 
+    /** 讓卡片裡的內容靠上排列(多出來的高度留在下面) */
+    static void filler(JPanel p, int row) {
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridy = row;
+        c.gridx = 0;
+        c.gridwidth = 2;
+        c.weighty = 1;
+        c.fill = GridBagConstraints.VERTICAL;
+        p.add(new JLabel(" "), c);
+    }
+
     static void setText(final JLabel l, final String text, final Color color) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -88,6 +100,7 @@ public class StatusCards {
 
         // 1. 機器人狀態
         JPanel c1 = card("機器人狀態", 440, 200, 570, 140);
+        card1 = c1;
         stPort = val(); stAdj = val(); stSync = val(); stLast = val(); stFiles = val();
         row(c1, 0, "Arduino Micro", stPort);
         row(c1, 1, "MotorAdj 串口", stAdj);
@@ -98,6 +111,7 @@ public class StatusCards {
 
         // 2. Micro 空間
         JPanel c2 = card("Micro 空間用量", 440, 350, 280, 210);
+        card2 = c2;
         flashBar = new JProgressBar(0, 100);
         flashBar.setStringPainted(true);
         ramBar = new JProgressBar(0, 100);
@@ -107,13 +121,15 @@ public class StatusCards {
         row(c2, 1, "", flashTxt);
         row(c2, 2, "記憶體", ramBar);
         row(c2, 3, "", ramTxt);
-        row(c2, 4, "動作幀", frameTxt);
+        row(c2, 4, "目前幀數", frameTxt);
         row(c2, 5, "預估", planTxt);
         row(c2, 6, "", planTxt2);
+        filler(c2, 7);
         sp.add(c2);
 
         // 3. 環境檢查
         JPanel c3 = card("環境檢查", 730, 350, 280, 210);
+        card3 = c3;
         evJava = val(); evCli = val(); evAvr = val(); evSketch = val(); evPort = val();
         row(c3, 0, "Java", evJava);
         row(c3, 1, "arduino-cli", evCli);
@@ -127,6 +143,7 @@ public class StatusCards {
         GridBagConstraints bc = new GridBagConstraints();
         bc.gridy = 5; bc.gridx = 0; bc.gridwidth = 2; bc.insets = new Insets(8, 8, 4, 8); bc.anchor = GridBagConstraints.WEST;
         c3.add(recheck, bc);
+        filler(c3, 6);
         sp.add(c3);
 
         sp.repaint();
@@ -252,7 +269,7 @@ public class StatusCards {
             ramTxt.setText(String.format("%,d / %,d 位元組", ramUsed, ramMax));
             ramTxt.setForeground(Color.GRAY);
         }
-        frameTxt.setText("MotorAdj 目前 " + nowFrames + " 幀(上限 " + AddFrames.limit() + ")");
+        frameTxt.setText(nowFrames + " 幀(上限 " + AddFrames.limit() + ")");
         int lim = AddFrames.limit();
         int pb = AddFrames.projectedBytes(lim);
         if (pb < 0) {

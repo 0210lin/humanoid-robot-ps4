@@ -235,6 +235,13 @@ public class BgDialog {
         JPanel center = new JPanel(new BorderLayout());
         center.setBorder(BorderFactory.createEmptyBorder(12, 12, 4, 12));
         center.add(pv, BorderLayout.CENTER);
+        if (Theme.tech()) {
+            JLabel note = new JLabel("<html>目前是「科技風」外觀:主視窗會<b>強制使用內建的科技風背景</b>。你在這裡設定的圖片會保留,"
+                    + "切到「淺色 / 深色 / 原本的樣子」時才會顯示。</html>");
+            note.setForeground(new Color(0xFF, 0xB3, 0x00));
+            note.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+            center.add(note, BorderLayout.NORTH);
+        }
 
         d.getContentPane().setLayout(new BorderLayout());
         d.getContentPane().add(center, BorderLayout.CENTER);

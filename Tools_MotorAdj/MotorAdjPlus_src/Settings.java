@@ -140,8 +140,8 @@ public class Settings {
         tc.gridx = 0;
         tc.anchor = GridBagConstraints.WEST;
         form.add(new JLabel("外觀:"), tc);
-        final String[] themeNames = {"淺色(預設)", "深色", "原本的樣子"};
-        final String[] themeKeys = {"light", "dark", "classic"};
+        final String[] themeNames = {"淺色(預設)", "深色", "科技風", "原本的樣子"};
+        final String[] themeKeys = {"light", "dark", "tech", "classic"};
         final javax.swing.JComboBox<String> fTheme = new javax.swing.JComboBox<String>(themeNames);
         for (int i = 0; i < themeKeys.length; i++) {
             if (themeKeys[i].equals(Theme.name())) fTheme.setSelectedIndex(i);

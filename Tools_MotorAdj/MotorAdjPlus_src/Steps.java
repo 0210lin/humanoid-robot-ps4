@@ -37,7 +37,7 @@ public class Steps {
             JScrollBar sb = bars.get(i);
             sb.setUnitIncrement(u);
             sb.setBlockIncrement(b);
-            sb.setToolTipText("左右的 -/+ 按鈕:一次 ±" + u + ";點空白軌道:一次 ±" + b);
+            sb.setToolTipText("左右的 -/+ 按鈕:一次 ±" + u + ";點空白軌道:一次 ±" + b + Limits.tip(i));
             minus.get(i).setToolTipText("-" + u + "(按住可連續移動)");
             plus.get(i).setToolTipText("+" + u + "(按住可連續移動)");
         }
