@@ -215,6 +215,13 @@ public class Plus {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+
+        // 人偶模式:進入時維持原本的勾選與顏色,並標示被放鬆的那顆
+        try {
+            DummyMode.install(p);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         p.repaint();
 
         try {
