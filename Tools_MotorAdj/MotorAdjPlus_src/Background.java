@@ -30,6 +30,7 @@ public class Background {
     static class Pane extends JComponent {
         BufferedImage img;       // 原圖
         BufferedImage scaled;    // 縮放後(快取)
+        BufferedImage techCache; // 科技風內建背景(畫好一次,大小改變才重畫)
         int scaledW = -1, scaledH = -1;
         Color color;             // 純色背景(沒有圖片時;有圖片時是留邊的顏色)
         int dim = 75;            // 遮罩濃度 0~100
@@ -72,7 +73,13 @@ public class Background {
                 g.setColor(base);
                 g.fillRect(0, 0, w, h);
             } else if (tech && color == null) {
-                paintTech(g, w, h);
+                if (techCache == null || techCache.getWidth() != w || techCache.getHeight() != h) {
+                    techCache = new BufferedImage(Math.max(1, w), Math.max(1, h), BufferedImage.TYPE_INT_RGB);
+                    Graphics2D tg = techCache.createGraphics();
+                    paintTech(tg, w, h);
+                    tg.dispose();
+                }
+                g.drawImage(techCache, 0, 0, null);
             } else {
                 g.setColor(color != null ? color : base);
                 g.fillRect(0, 0, w, h);
