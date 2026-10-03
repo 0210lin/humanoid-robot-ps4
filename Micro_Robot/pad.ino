@@ -33,20 +33,37 @@ static void pad_debugPrint()
     return;
   }
   lastPrint = millis();
-  Serial.print(F("key=0x"));
-  Serial.print(pad_lastKey, HEX);
-  Serial.print(F(" LX="));
+  // 按鍵:Share / Options 是特殊組合碼,其他按鍵可以同時按,逐個列出名字
+  Serial.print(F("Buttons: "));
+  if(pad_lastKey == PAD_BTN_STOP){
+    Serial.print(F("SHARE(STOP) "));
+  }else if(pad_lastKey == PAD_BTN_START){
+    Serial.print(F("OPTIONS(START) "));
+  }else{
+    if(pad_lastKey & PAD_BTN_UP)       Serial.print(F("UP "));
+    if(pad_lastKey & PAD_BTN_DOWN)     Serial.print(F("DOWN "));
+    if(pad_lastKey & PAD_BTN_LEFT)     Serial.print(F("LEFT "));
+    if(pad_lastKey & PAD_BTN_RIGHT)    Serial.print(F("RIGHT "));
+    if(pad_lastKey & PAD_BTN_TRIANGLE) Serial.print(F("TRIANGLE "));
+    if(pad_lastKey & PAD_BTN_CROSS)    Serial.print(F("CROSS "));
+    if(pad_lastKey & PAD_BTN_CIRCLE)   Serial.print(F("CIRCLE "));
+    if(pad_lastKey & PAD_BTN_SQUARE)   Serial.print(F("SQUARE "));
+    if(pad_lastKey & PAD_BTN_L1)       Serial.print(F("L1 "));
+    if(pad_lastKey & PAD_BTN_L2)       Serial.print(F("L2 "));
+    if(pad_lastKey & PAD_BTN_R1)       Serial.print(F("R1 "));
+    if(pad_lastKey & PAD_BTN_R2)       Serial.print(F("R2 "));
+  }
+  if(pad_stickBtn & PAD_L3) Serial.print(F("L3 "));
+  if(pad_stickBtn & PAD_R3) Serial.print(F("R3 "));
+  if(pad_lastKey == PAD_BTN_NONE && pad_stickBtn == 0) Serial.print(F("(none)"));
+  Serial.print(F("  | LeftStick X="));
   Serial.print(pad_stick[PAD_LX]);
-  Serial.print(F(" LY="));
+  Serial.print(F(" Y="));
   Serial.print(pad_stick[PAD_LY]);
-  Serial.print(F(" RX="));
+  Serial.print(F("  RightStick X="));
   Serial.print(pad_stick[PAD_RX]);
-  Serial.print(F(" RY="));
-  Serial.print(pad_stick[PAD_RY]);
-  Serial.print(F(" L3="));
-  Serial.print(pad_stickBtn & PAD_L3 ? 1 : 0);
-  Serial.print(F(" R3="));
-  Serial.println(pad_stickBtn & PAD_R3 ? 1 : 0);
+  Serial.print(F(" Y="));
+  Serial.println(pad_stick[PAD_RY]);
 }
 #endif
 

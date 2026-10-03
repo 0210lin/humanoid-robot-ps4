@@ -22,7 +22,7 @@ PS4 手把 (藍牙) -> M5Stack ATOM Lite -> UART -> Arduino Micro
 #include <PS4Controller.h>
 
 // 手把配對的 MAC(用 SixaxisPairTool 寫入手把的 ESP32 藍牙 MAC)
-#define PS4_MAC  "aa:bb:cc:dd:ee:ff"
+#define PS4_MAC  "c8:85:41:4d:5c:3e"
 
 #define TX2_PIN  26   // ATOM Lite Grove 的 G26
 #define RX2_PIN  32   // Grove 的 G32(沒有使用)
