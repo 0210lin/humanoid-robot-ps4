@@ -6,6 +6,7 @@ pad.ino -- 接收 ESP32 送來的資料
 */
 #include <SoftwareSerial.h>
 #include "pad.h"
+#include "custom.h"
 
 #define PKT_LEN 9
 
@@ -16,6 +17,8 @@ static SoftwareSerial espSerial(PAD_RX_PIN, PAD_TX_PIN);
 static uint16_t pad_lastKey = 0;
 static int8_t   pad_stick[4] = {0, 0, 0, 0};
 static uint8_t  pad_stickBtn = 0;
+static uint16_t pad_pending = 0;        // 動作播放中(程式忙)按過又放開的鍵,留給主程式處理一次
+static uint16_t pad_served = 0;         // 程式已經看過、正在處理的按著的鍵(放開才清掉)
 static uint32_t pad_lastMs = 0;
 static uint8_t  pad_buf[PKT_LEN];
 static uint8_t  pad_idx = 0;
@@ -25,6 +28,7 @@ void pad_init()
   espSerial.begin(PAD_BAUD);
 }
 
+static bool pad_alive();
 #if PAD_DEBUG_PRINT
 static void pad_debugPrint()
 {
@@ -33,6 +37,11 @@ static void pad_debugPrint()
     return;
   }
   lastPrint = millis();
+  if(!pad_alive()){
+    // 超過一段時間沒收到 ESP32 的封包:不要顯示舊資料(可能是雜訊),直接告訴你斷線
+    Serial.println(F("LINK LOST: no data from ESP32 (check ATOM power / G26->D8 / GND)"));
+    return;
+  }
   // 按鍵:Share / Options 是特殊組合碼,其他按鍵可以同時按,逐個列出名字
   Serial.print(F("Buttons: "));
   if(pad_lastKey == PAD_BTN_STOP){
@@ -67,6 +76,22 @@ static void pad_debugPrint()
 }
 #endif
 
+// 回報狀態給 ESP32,讓它決定手把燈條的顏色:0xBB, status, ~status(每 300 ms 一次)
+//   status:bit0 = 偵測到 BNO055 感測器,bit1 = 傾斜感測已開啟(Options 切換)
+// 走 D9(PAD_TX_PIN),要接到 ESP32 的 G32。沒接線也不影響其他功能。
+static void pad_sendStatus()
+{
+  static uint32_t lastSend = 0;
+  if(millis() - lastSend < 300){
+    return;
+  }
+  lastSend = millis();
+  uint8_t s = (imu_present() ? 1 : 0) | (imu_isEnabled() ? 2 : 0);
+  espSerial.write((uint8_t)0xBB);
+  espSerial.write(s);
+  espSerial.write((uint8_t)~s);
+}
+
 // 讀完目前收到的資料,保留最新的一筆有效封包
 static void pad_poll()
 {
@@ -86,6 +111,16 @@ static void pad_poll()
       }
       if(chk == pad_buf[PKT_LEN - 1]){
         pad_lastKey = pad_buf[1] | ((uint16_t)pad_buf[2] << 8);
+        if(pad_lastKey == 0){
+          pad_served = 0;                   // 放開了
+        }else if(pad_lastKey != pad_served){
+          // 這個鍵程式還沒親眼看到過(忙碌時按的),記起來,等程式有空時補處理一次
+          if(pad_lastKey == PAD_BTN_STOP){
+            pad_pending = PAD_BTN_STOP;     // Share 絕對不能漏掉
+          }else if(pad_pending != PAD_BTN_STOP){
+            pad_pending = pad_lastKey;
+          }
+        }
         for(uint8_t i = 0; i < 4; i++){
           pad_stick[i] = (int16_t)pad_buf[3 + i] - 128;
         }
@@ -94,6 +129,7 @@ static void pad_poll()
       }
     }
   }
+  pad_sendStatus();
 #if PAD_DEBUG_PRINT
   pad_debugPrint();
 #endif
@@ -109,7 +145,32 @@ uint16_t pad_getKey()
 {
   pad_poll();
   // 斷線 -> 回報「沒有按鍵」,讓進行中的動作停止
-  return pad_alive() ? pad_lastKey : 0;
+  if(!pad_alive()){
+    return 0;
+  }
+  if(pad_lastKey != 0){
+    pad_served = pad_lastKey;               // 程式已經看到這個按著的鍵了,不必再補處理
+    pad_pending = 0;
+  }
+  return pad_lastKey;
+}
+
+// 按鍵「事件」:給主程式的按鍵分派用。
+// 動作播放時(SetFrameRun 會等整段播完)程式讀不到按鍵,那段時間很快按一下的鍵會被後面的封包蓋掉。
+// 這裡把那一下記起來:目前沒按鍵、但剛才有按過,就補回傳一次。目前有按著的鍵就照常回傳。
+uint16_t pad_getKeyEvent()
+{
+  uint16_t k = pad_getKey();
+  if(k != 0){
+    pad_pending = 0;
+    return k;
+  }
+  if(pad_pending != 0){
+    k = pad_pending;
+    pad_pending = 0;
+    return pad_alive() ? k : 0;
+  }
+  return 0;
 }
 
 // 推搖桿

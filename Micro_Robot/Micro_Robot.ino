@@ -79,6 +79,45 @@ void SetFrameRun(uint16_t frame, uint16_t delayms)
   }
 }
 
+// 依傾斜量混合兩個「浮誇姿勢」,只動它們有勾選(啟用)的馬達:
+//   位置 = 站姿 + (前後傾姿勢 - 站姿) x kP / 1000 + (左右傾姿勢 - 站姿) x kR / 1000
+// kP、kR:-1000 ~ 1000(負的 = 反方向,等於把姿勢左右 / 前後反過來),frame 給 -1 代表不用那一組。
+// timeMs:馬達走到位置要花多久(毫秒),愈小動得愈快。
+void SetFrameTilt(uint16_t standFrame, int16_t frameP, int16_t kP, int16_t frameR, int16_t kR, uint16_t timeMs)
+{
+  if(standFrame >= MOTOR_FRAME_MAX){
+    return;
+  }
+  Checksum_Calc = 0;
+  UART_Send_MotionHeader();
+  for(uint8_t ii = 0; ii < 32; ii++){
+    uint16_t pos = 0;
+    uint16_t tm = 0;
+    if(ii < MOTOR_MOTOR_MAX){
+      int32_t stand = pgm_read_word_near(&motor_para[standFrame][ii][MOTOR_POS]);
+      int32_t p = stand;
+      uint8_t used = 0;
+      if(frameP >= 0 && frameP < MOTOR_FRAME_MAX && pgm_read_word_near(&motor_para[frameP][ii][MOTOR_EN]) != 0){
+        p += ((int32_t)pgm_read_word_near(&motor_para[frameP][ii][MOTOR_POS]) - stand) * kP / 1000;
+        used = 1;
+      }
+      if(frameR >= 0 && frameR < MOTOR_FRAME_MAX && pgm_read_word_near(&motor_para[frameR][ii][MOTOR_EN]) != 0){
+        p += ((int32_t)pgm_read_word_near(&motor_para[frameR][ii][MOTOR_POS]) - stand) * kR / 1000;
+        used = 1;
+      }
+      if(used){
+        if(p < 500){ p = 500; }
+        if(p > 2500){ p = 2500; }
+        pos = (uint16_t)p;
+        tm = timeMs;
+      }
+    }
+    UART_Send_PosAndTime(ii + 1, pos, tm);
+  }
+  UART_Send_Checksum();
+  Serial1.flush();
+}
+
 /* ===== 與電腦 MotorAdj 的通訊協定(格式固定,不要改) ===== */
 
 #define UART_CMD_ACK  "MCMA"

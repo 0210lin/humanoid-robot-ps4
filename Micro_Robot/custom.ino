@@ -15,29 +15,151 @@ SetFrameRun(幀編號, 時間ms) 會播放 motor.h 裡的一個動作幀。
 #include "custom.h"
 #include "pad.h"
 
+static uint8_t imu_enabled = 0;         // 傾斜感測開關(Options 切換),見下方 custom_imuFun
+static uint8_t imu_prevOptions = 1;     // 進入遙控模式時按著 Options,不算一次切換
+
 void custom_setup()
 {
   pad_init();
+  imu_init();
 }
 
 void custom_loop()
 {
   uart_disableMotor();
+  imu_enabled = 0;                    // 每次進入遙控模式,傾斜感測先關閉
+  imu_prevOptions = 1;
 
   // 等待 START 才開始動作(期間如果接上電腦,就交給電腦處理)
-  while (pad_getKey() != PAD_BTN_START) {
+  while (pad_getKeyEvent() != PAD_BTN_START) {
     if (uart_isConnectToPC() != 0) {
       return;
     }
   }
 
   while (uart_isUartMode == 0) {
+    custom_imuFun();                  // 傾斜超過角度 -> 跑你寫好的動作(優先於按鍵)
     custom_gamepadKeyFun_kondo();
     custom_stickFun();
 
     if (uart_isConnectToPC() != 0) {
       return;
     }
+  }
+}
+
+// ====== 傾斜感測(BNO055):被推、被打時自己修正 ======
+// 原則:你在操作時完全不干涉。只有「沒按任何鍵、沒推搖桿、沒按 L3/R3」,而且放開後已經穩定一陣子
+// (imu.ino 的 IMU_COOLDOWN_MS,預設 1.5 秒),才會依傾斜角度修正。
+//
+// 做法:你在 MotorAdj 錄一幀「浮誇的修正姿勢」,【只勾選要動的馬達】(例如大腿)。
+//   傾斜愈大,就愈接近那個浮誇姿勢(從站姿慢慢混過去),動的速度也愈快。
+//   往另一邊倒,姿勢就反過來(等於前後 / 左右對稱的反向修正)。
+//   傾斜太多(IMU_CROUCH_DEG 以上)就直接做蹲下的動作。
+// 角度正負:往前倒 pitch 為正、往右倒 roll 為正;方向反了,改 imu.ino 的 IMU_PITCH_SIGN / IMU_ROLL_SIGN。
+//
+// 把下面的 -1 換成你的幀編號(-1 = 這一項不啟用)。【第一次測試一定要把機器人架空,先確認方向!】
+#define IMU_STAND_FRAME    1     // 站姿幀
+#define IMU_PITCH_FRAME   -1     // XX 前後傾的浮誇姿勢(往前倒時要做的修正)
+#define IMU_ROLL_FRAME    -1     // XX 左右傾的浮誇姿勢(往右倒時要做的修正)
+#define IMU_CROUCH_FRAME  -1     // XX 傾斜太多時的蹲下動作
+
+#define IMU_DEAD_DEG      5      // 傾斜在這個角度內不動(死區)
+#define IMU_FULL_DEG      20     // 傾斜到這個角度,修正達到 100%(完整的浮誇姿勢)
+#define IMU_CROUCH_DEG    35     // 傾斜超過這個角度,直接蹲下
+#define IMU_SLOW_MS       200    // 小傾斜時,馬達走到位置的時間(慢)
+#define IMU_FAST_MS       60     // 傾斜到 100% 時的時間(快)
+#define IMU_STICK_ACTIVE  40     // 搖桿推超過這個值就算「正在操作」(0~127)
+
+static int16_t imu_lastKP = 0;
+static int16_t imu_lastKR = 0;
+static uint8_t imu_posed = 0;           // 目前是不是被傾斜修正拉離站姿
+
+// 角度(0.1 度)換成修正比例:死區內 0,到 IMU_FULL_DEG 為 +-1000
+static int16_t imu_gain(int16_t a10)
+{
+  int16_t a = abs(a10);
+  if (a <= IMU_DEAD_DEG * 10) {
+    return 0;
+  }
+  int32_t k = (int32_t)(a - IMU_DEAD_DEG * 10) * 1000 / ((IMU_FULL_DEG - IMU_DEAD_DEG) * 10);
+  if (k > 1000) {
+    k = 1000;
+  }
+  return a10 < 0 ? -k : k;
+}
+
+// 回到站姿(從修正姿勢放回去)
+static void imu_backToStand()
+{
+  if (imu_posed) {
+    SetFrameTilt(IMU_STAND_FRAME, -1, 0, -1, 0, 120);
+    imu_posed = 0;
+    imu_lastKP = 0;
+    imu_lastKR = 0;
+  }
+}
+
+// 開關:按 PS4 的 Options 切換「傾斜感測」開 / 關。每次進入遙控模式一開始都是【關】。
+uint8_t imu_isEnabled() { return imu_enabled; }   // 給 pad.ino 回報狀態用
+//   (Options 本來就是「回站姿」,所以按一下會同時回站姿並切換開關;序列監控會印出 IMU ON / OFF)
+void custom_imuFun()
+{
+  uint8_t options = (pad_getKey() == PAD_BTN_START);
+  if (options && !imu_prevOptions) {
+    imu_enabled = !imu_enabled;
+    imu_posed = 0;
+    imu_rearm();                        // 重新計冷卻(開啟後先給一段穩定時間)
+    if (uart_isUartMode == 0) {
+      Serial.println(imu_enabled ? F("IMU ON") : F("IMU OFF"));
+    }
+  }
+  imu_prevOptions = options;
+
+  if (!imu_enabled) {
+    return;
+  }
+
+  // 正在操作(有按鍵、推搖桿、按 L3/R3):不干涉;如果剛好被修正拉在歪的姿勢,先放回站姿
+  uint8_t busy = (pad_getKey() != 0) || (pad_getStickButtons() != 0)
+              || (abs(pad_getStick(PAD_LX)) >= IMU_STICK_ACTIVE) || (abs(pad_getStick(PAD_LY)) >= IMU_STICK_ACTIVE)
+              || (abs(pad_getStick(PAD_RX)) >= IMU_STICK_ACTIVE) || (abs(pad_getStick(PAD_RY)) >= IMU_STICK_ACTIVE);
+  if (busy) {
+    imu_backToStand();
+    imu_rearm();
+    return;
+  }
+
+  imu_update();
+  if (!imu_present() || imu_cooling()) {
+    return;
+  }
+
+  int16_t p = imu_getPitch10();
+  int16_t r = imu_getRoll10();
+
+  // 傾斜太多:直接蹲下
+  if (IMU_CROUCH_FRAME >= 0 && (abs(p) >= IMU_CROUCH_DEG * 10 || abs(r) >= IMU_CROUCH_DEG * 10)) {
+    SetFrameRun(IMU_CROUCH_FRAME, 400);
+    imu_posed = 0;
+    imu_lastKP = 0;
+    imu_lastKR = 0;
+    imu_rearm();
+    return;
+  }
+
+  // 一般傾斜:依角度混合浮誇姿勢(變化夠大才重送,不要一直送指令)
+  int16_t kP = (IMU_PITCH_FRAME >= 0) ? imu_gain(p) : 0;
+  int16_t kR = (IMU_ROLL_FRAME >= 0) ? imu_gain(r) : 0;
+  int16_t big = max(abs(kP), abs(kR));
+  uint8_t changed = (abs(kP - imu_lastKP) >= 30) || (abs(kR - imu_lastKR) >= 30)
+                 || ((kP == 0 && kR == 0) && imu_posed);
+  if (changed) {
+    uint16_t t = IMU_SLOW_MS - (uint32_t)(IMU_SLOW_MS - IMU_FAST_MS) * big / 1000;
+    SetFrameTilt(IMU_STAND_FRAME, IMU_PITCH_FRAME, kP, IMU_ROLL_FRAME, kR, t);
+    imu_lastKP = kP;
+    imu_lastKR = kR;
+    imu_posed = (kP != 0 || kR != 0);
   }
 }
 
@@ -209,7 +331,7 @@ void custom_stickFun()
 
 int16_t custom_gamepadKeyFun_kondo()
 {
-  uint16_t key = pad_getKey();
+  uint16_t key = pad_getKeyEvent();
 
   if (key != PAD_BTN_NONE) {   // 沒按鍵就什麼都不做
     switch (key) {

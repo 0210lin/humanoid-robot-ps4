@@ -25,7 +25,7 @@ PS4 手把 (藍牙) -> M5Stack ATOM Lite -> UART -> Arduino Micro
 #define PS4_MAC  "c8:85:41:4d:5c:3e"
 
 #define TX2_PIN  26   // ATOM Lite Grove 的 G26
-#define RX2_PIN  32   // Grove 的 G32(沒有使用)
+#define RX2_PIN  32   // Grove 的 G32:接 Micro 的 D9,收 Micro 回報的感測器狀態
 #define LINK_BAUD 38400
 #define SEND_INTERVAL_MS 100   // Micro 的接收緩衝區只有 64 位元組,間隔不要再縮短
 
@@ -84,6 +84,199 @@ uint8_t readStickButtons()
   return b;
 }
 
+// ====== 手把燈條 ======
+// 手把還沒連上:ATOM 自己的燈(Atom Lite 上那顆 RGB)閃黃色
+// 手把已連上,但 Micro 還沒回報狀態(沒接線 / 還在開機):手把燈條閃黃色
+// 手把已連上,Micro 有回報:Micro 有偵測到 BNO055 感測器 = 綠色,沒有 = 藍色(可用 LED_GREEN_WHEN_ENABLED 改成「按 Options 開啟才綠」)
+// 按手把的 PS 鍵:燈條顯示電量 3 秒(綠 = 夠,黃 = 一半,淺紅 = 偏低,深紅 = 快沒電),之後回到上面的顏色
+// Micro 的 D9 要接到 ATOM 的 G32,Micro 才能把感測器狀態回報給 ATOM(沒接也能用,只是會一直閃黃)
+#define ATOM_LED_PIN          27     // Atom Lite 內建 RGB 燈
+#define LED_GREEN_WHEN_ENABLED 0     // 0 = 偵測到 BNO055 就綠色、沒偵測到是藍色;1 = 要按 Options 把傾斜感測【開啟】才綠色
+#define MICRO_STATUS_TIMEOUT_MS 1500
+#define BATTERY_SHOW_MS       3000
+
+static uint8_t  microStatus = 0;     // bit0 = 偵測到感測器,bit1 = 傾斜感測已開啟
+static uint32_t microMs = 0;
+static bool     microEver = false;
+
+// Micro 回報:0xBB, status, ~status
+void readMicro()
+{
+  static uint8_t buf[3];
+  static uint8_t idx = 0;
+  while (Serial2.available()) {
+    uint8_t b = Serial2.read();
+    if (idx == 0 && b != 0xBB) continue;
+    buf[idx++] = b;
+    if (idx == 3) {
+      idx = 0;
+      if ((uint8_t)~buf[1] == buf[2]) {
+        microStatus = buf[1];
+        microMs = millis();
+        microEver = true;
+      }
+    }
+  }
+}
+
+enum LedMode { L_NONE, L_LINK, L_BLUE, L_GREEN, L_BAT };
+
+static void padLed(uint8_t r, uint8_t g, uint8_t b, uint8_t onT, uint8_t offT)
+{
+  PS4.setLed(r, g, b);
+  PS4.setFlashRate(onT, offT);
+  PS4.sendToController();
+}
+
+void updateLeds()
+{
+  static LedMode mode = L_NONE;
+  static uint32_t lastSend = 0;
+  static uint32_t batUntil = 0;
+  static bool prevPs = false;
+
+  if (!PS4.isConnected()) {
+    bool f = (millis() / 500) % 2;
+    neopixelWrite(ATOM_LED_PIN, f ? 40 : 0, f ? 30 : 0, 0);   // 等待連線:閃黃
+    mode = L_NONE;
+    prevPs = false;
+    return;
+  }
+  neopixelWrite(ATOM_LED_PIN, 0, 0, 0);
+
+  bool ps = PS4.PSButton();
+  if (ps && !prevPs) {
+    batUntil = millis() + BATTERY_SHOW_MS;
+    mode = L_NONE;                      // 重新送一次(顯示電量)
+  }
+  prevPs = ps;
+
+  LedMode want;
+  bool microOk = microEver && (millis() - microMs < MICRO_STATUS_TIMEOUT_MS);
+  if (millis() < batUntil)            want = L_BAT;
+  else if (!microOk)                  want = L_LINK;
+#if LED_GREEN_WHEN_ENABLED
+  else if (microStatus & 0x02)        want = L_GREEN;
+#else
+  else if (microStatus & 0x01)        want = L_GREEN;
+#endif
+  else                                want = L_BLUE;
+
+  // 狀態改變,或每 2 秒補送一次(避免剛連上時第一次沒收到)
+  if (want == mode && millis() - lastSend < 2000) return;
+  lastSend = millis();
+
+  if (want == L_LINK) {
+    padLed(255, 180, 0, 30, 30);        // 閃黃
+  } else if (want == L_BLUE) {
+    padLed(0, 60, 255, 0, 0);
+  } else if (want == L_GREEN) {
+    padLed(0, 255, 40, 0, 0);
+  } else {                              // L_BAT:原始值 0~15;充電中最滿 11,沒充電最滿約 8
+    uint8_t raw = PS4.Battery();
+    uint8_t full = PS4.Charging() ? 11 : 8;
+    uint8_t pct = (uint8_t)min(100, (int)raw * 100 / full);
+    if (mode != L_BAT) Serial.printf("Battery raw=%u charging=%d -> %u%%\n", raw, PS4.Charging(), pct);
+    if (pct >= 60)      padLed(0, 255, 0, 0, 0);
+    else if (pct >= 30) padLed(255, 200, 0, 0, 0);
+    else if (pct >= 15) padLed(255, 70, 70, 0, 0);     // 淺紅(偏粉)
+    else                padLed(120, 0, 0, 0, 0);       // 深紅(很暗,快沒電)
+  }
+  mode = want;
+}
+
+// ====== 手把震動 ======
+// 連上手把:震一下(連上後約 1 秒,確定連線穩了才震)
+// 傾斜感測切換(Micro 回報的「已開啟」狀態改變):開啟 = 震一長下,關閉 = 短短兩下
+// 電量很低(深紅那一段)而且沒在充電:每 20 秒短短兩下提醒
+#define RUMBLE_STRENGTH   200    // 震動強度 0~255
+#define LOW_BATT_PCT      15     // 低於這個百分比算電量很低(跟燈條深紅那段一致)
+#define LOW_BATT_REMIND_MS 20000   // 低電量提醒的間隔(毫秒)
+
+static uint8_t  rumLeft = 0;
+static uint16_t rumOn = 0, rumOff = 0;
+static bool     rumIsOn = false;
+static uint32_t rumT = 0;
+
+// 震 pulses 下,每下震 onMs 毫秒、間隔 offMs 毫秒
+void rumble(uint8_t pulses, uint16_t onMs, uint16_t offMs)
+{
+  rumLeft = pulses;
+  rumOn = onMs;
+  rumOff = offMs;
+  rumIsOn = false;
+  rumT = 0;
+}
+
+void updateRumble()
+{
+  if (!PS4.isConnected()) {
+    rumLeft = 0;
+    rumIsOn = false;
+    return;
+  }
+  uint32_t now = millis();
+  if (rumIsOn) {
+    if (now - rumT >= rumOn) {
+      PS4.setRumble(0, 0);
+      PS4.sendToController();
+      rumIsOn = false;
+      rumT = now;
+    }
+  } else if (rumLeft > 0 && (rumT == 0 || now - rumT >= rumOff)) {
+    PS4.setRumble(RUMBLE_STRENGTH, RUMBLE_STRENGTH);
+    PS4.sendToController();
+    rumIsOn = true;
+    rumT = now;
+    rumLeft--;
+  }
+}
+
+// 偵測要震動的事件
+void updateEvents()
+{
+  static bool     wasConn = false;
+  static uint32_t connMs = 0;
+  static bool     connBuzzed = false;
+  static int8_t   prevEnabled = -1;
+  static uint32_t lastLowBatt = 0;
+
+  bool on = PS4.isConnected();
+  if (on && !wasConn) {
+    connMs = millis();
+    connBuzzed = false;
+    prevEnabled = -1;
+    lastLowBatt = millis();
+  }
+  wasConn = on;
+  if (!on) return;
+
+  if (!connBuzzed && millis() - connMs > 1000) {
+    connBuzzed = true;
+    rumble(1, 200, 0);                  // 連上了
+  }
+
+  bool microOk = microEver && (millis() - microMs < MICRO_STATUS_TIMEOUT_MS);
+  if (microOk) {
+    int8_t en = (microStatus & 0x02) ? 1 : 0;
+    if (prevEnabled >= 0 && en != prevEnabled) {
+      if (en) rumble(1, 500, 0);        // 傾斜感測開啟:一長下
+      else    rumble(2, 120, 120);      // 關閉:短短兩下
+    }
+    prevEnabled = en;
+  }
+
+  // 連上 10 秒後才檢查電量(剛連上時電量資料可能還沒更新)
+  if (millis() - connMs > 10000 && millis() - lastLowBatt > LOW_BATT_REMIND_MS) {
+    lastLowBatt = millis();
+    uint8_t full = PS4.Charging() ? 11 : 8;
+    uint8_t pct = (uint8_t)min(100, (int)PS4.Battery() * 100 / full);
+    if (pct < LOW_BATT_PCT && !PS4.Charging()) {
+      rumble(2, 150, 150);
+    }
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -94,13 +287,30 @@ void setup()
 
 void loop()
 {
+  readMicro();
+  updateLeds();
+  updateEvents();
+  updateRumble();
+
+  // 連續取樣、把這一個傳送週期內「出現過」的按鍵鎖住(很快按一下也不會漏掉)。
+  // Share / Options 是特殊組合碼,不能跟別的按鍵 OR 在一起,所以分開記:Share 優先,其次 Options。
+  static uint16_t latchKeys = 0;
+  static bool     latchStart = false, latchStop = false;
+  static uint8_t  latchSb = 0;
+  uint16_t kNow = readKeys();
+  if (kNow == K_STOP)       latchStop = true;
+  else if (kNow == K_START) latchStart = true;
+  else                      latchKeys |= kNow;
+  latchSb |= readStickButtons();
+
   static uint32_t last = 0;
   if (millis() - last < SEND_INTERVAL_MS) return;
   last = millis();
 
   bool on = PS4.isConnected();
-  uint16_t k = readKeys();
-  uint8_t  sb = readStickButtons();
+  uint16_t k = latchStop ? K_STOP : (latchStart ? K_START : latchKeys);
+  uint8_t  sb = latchSb;
+  latchKeys = 0; latchStart = false; latchStop = false; latchSb = 0;
 
   uint8_t pkt[9];
   pkt[0] = 0xAA;

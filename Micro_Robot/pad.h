@@ -33,6 +33,7 @@ enum PAD_BTN : uint16_t {
 
 void pad_init();
 uint16_t pad_getKey();
+uint16_t pad_getKeyEvent();           // 主程式分派用:忙碌時按過又放開的鍵也會補回傳一次
 
 // 搖桿(蘑菇頭)類比值:-128 ~ 127,Y 向上為正。斷線時為 0。
 // 搖桿的處理在 ESP32 完成;這裡只是讓 Micro 也能讀到數值。

@@ -11,12 +11,12 @@ import javax.swing.JOptionPane;
  * 新增後要記得「儲存設定」(幀數會存進設定檔的 mmax)和「轉換設定」(輸出 motor.h)。
  *
  * Arduino 那邊不用改:motor.h 裡的 MOTOR_FRAME_MAX 會跟著變。限制是 Micro 的程式空間
- * (每幀 156 位元組),所以預設只加到 100 幀,留空間給之後的呼叫與邏輯。
+ * (每幀 156 位元組),所以預設只加到 90 幀,留空間給之後的呼叫與邏輯。
  */
 public class AddFrames {
 
     static final int HARD_LIMIT = 1000;     // 絕對上限(防呆)
-    static final int DEFAULT_LIMIT = 100;   // 預設幀數上限(留空間給程式)
+    static final int DEFAULT_LIMIT = 90;    // 預設幀數上限(留空間給程式)
     static final int BYTES_PER_FRAME = 156; // Micro 上每一幀佔的空間:26 顆 × 3 個數字 × 2 位元組
     static JButton total;   // 按鈕本身就顯示「幀數 / 上限」
     static Object outer;
