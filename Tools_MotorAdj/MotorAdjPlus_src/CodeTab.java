@@ -52,6 +52,8 @@ public class CodeTab {
 
     static JComboBox<String> combo;
     static JTextArea area;
+    static javax.swing.undo.UndoManager undoMgr = new javax.swing.undo.UndoManager();
+    static javax.swing.undo.CompoundEdit undoGroup = null;   // 自動對齊時,把整個動作當成一次可還原的編輯
     static JLabel status;
     static JLabel checkLabel;                  // 幀編號檢查的摘要
     static FrameCheck.Result lastCheck;
@@ -188,9 +190,36 @@ public class CodeTab {
         return new LinkedHashMap<String, String>(edits);
     }
 
+    /** 把修改套用到 custom.ino 的內容,回傳新的整份文字(不寫檔,給「檢查語法」用) */
+    static String applyToText(Map<String, String> ed) throws Exception {
+        List<String> lines = readLines();
+        if (!ed.isEmpty()) applyEdits(lines, ed);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < lines.size(); i++) {
+            if (i > 0) out.append("\n");
+            out.append(lines.get(i));
+        }
+        return out.toString();
+    }
+
     /** 把修改寫回 custom.ino。回傳備份檔(失敗時用來還原) */
     static File applyToFile(Map<String, String> ed, File root) throws Exception {
         List<String> lines = readLines();
+        applyEdits(lines, ed);
+        File bak = new File(new File(root, "backup"), "custom.ino.bak_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
+        bak.getParentFile().mkdirs();
+        Files.copy(customFile.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < lines.size(); i++) {
+            if (i > 0) out.append("\n");
+            out.append(lines.get(i));
+        }
+        Files.write(customFile.toPath(), out.toString().getBytes(StandardCharsets.UTF_8));
+        return bak;
+    }
+
+    /** 把修改套用到行清單(直接改 lines) */
+    static void applyEdits(List<String> lines, Map<String, String> ed) throws Exception {
         List<Block> bl = parse(lines);
         Map<String, Block> byKey = new LinkedHashMap<String, Block>();
         for (Block b : bl) byKey.put(b.key, b);
@@ -213,16 +242,6 @@ public class CodeTab {
             for (int j = b.end; j >= b.start; j--) lines.remove(j);
             lines.addAll(b.start, repl);
         }
-        File bak = new File(new File(root, "backup"), "custom.ino.bak_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
-        bak.getParentFile().mkdirs();
-        Files.copy(customFile.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < lines.size(); i++) {
-            if (i > 0) out.append("\n");
-            out.append(lines.get(i));
-        }
-        Files.write(customFile.toPath(), out.toString().getBytes(StandardCharsets.UTF_8));
-        return bak;
     }
 
     static void restore(File bak) throws Exception {
@@ -266,10 +285,22 @@ public class CodeTab {
         top.add(combo);
         JButton reload = new JButton("重新載入 custom.ino");
         JButton undo = new JButton("還原這一段");
+        JButton fmt = new JButton("自動對齊");
+        fmt.setToolTipText("整理這一段的縮排,並把行尾的 // 註解對齊(只動空白,不改程式)。可以按 Ctrl+Z 還原。快捷鍵:Ctrl+Shift+F");
         JButton pathBtn = new JButton("路徑設定…");
+        JButton blk = new JButton("方塊編輯");
+        blk.setToolTipText("用拖方塊的方式編輯這一段(像 Scratch):動作、重複、如果/否則、組合鍵…程式碼會自動產生");
+        blk.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) { openBlockEditor(); }
+        });
         top.add(reload);
         top.add(undo);
+        top.add(blk);
+        top.add(fmt);
         top.add(pathBtn);
+        fmt.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) { formatCurrent(); }
+        });
         pathBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent e) { Settings.showDialog(null); }
         });
@@ -279,9 +310,36 @@ public class CodeTab {
         area.setTabSize(2);
         JScrollPane sp = new JScrollPane(area);
 
+        // Ctrl+Z 還原 / Ctrl+Y 重做 / Ctrl+Shift+F 自動對齊
+        undoMgr.setLimit(200);
+        area.getDocument().addUndoableEditListener(new javax.swing.event.UndoableEditListener() {
+            public void undoableEditHappened(javax.swing.event.UndoableEditEvent e) {
+                if (undoGroup != null) undoGroup.addEdit(e.getEdit());
+                else undoMgr.addEdit(e.getEdit());
+            }
+        });
+        area.getInputMap().put(javax.swing.KeyStroke.getKeyStroke("ctrl Z"), "plusUndo");
+        area.getActionMap().put("plusUndo", new javax.swing.AbstractAction() {
+            public void actionPerformed(java.awt.event.ActionEvent e) { if (undoMgr.canUndo()) undoMgr.undo(); }
+        });
+        area.getInputMap().put(javax.swing.KeyStroke.getKeyStroke("ctrl Y"), "plusRedo");
+        area.getActionMap().put("plusRedo", new javax.swing.AbstractAction() {
+            public void actionPerformed(java.awt.event.ActionEvent e) { if (undoMgr.canRedo()) undoMgr.redo(); }
+        });
+        area.getInputMap().put(javax.swing.KeyStroke.getKeyStroke("ctrl shift F"), "plusFormat");
+        area.getActionMap().put("plusFormat", new javax.swing.AbstractAction() {
+            public void actionPerformed(java.awt.event.ActionEvent e) { formatCurrent(); }
+        });
+
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         status = new JLabel("改完後按右邊的按鈕,會把修改寫回 custom.ino,然後編譯並燒錄:");
         bottom.add(status);
+        final JButton chk = new JButton("檢查語法(不燒錄)");
+        chk.setToolTipText("只編譯、不燒錄,也不會改你的 custom.ino:先確認寫的程式語法有沒有錯");
+        chk.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) { SyntaxCheck.start(chk); }
+        });
+        bottom.add(chk);
         JButton upd = new JButton("更新到機器人(燒錄)");
         bottom.add(upd);
         Plus.updateButtons.add(upd);
@@ -376,6 +434,69 @@ public class CodeTab {
         combo.repaint();
     }
 
+    /** 把編輯區的內容整個換成 after。整個動作算一次編輯,Ctrl+Z 一次就還原 */
+    static void replaceAreaText(String after) {
+        String before = area.getText();
+        if (after.equals(before)) return;
+        undoGroup = new javax.swing.undo.CompoundEdit();
+        try {
+            ((javax.swing.text.AbstractDocument) area.getDocument()).replace(0, before.length(), after, null);
+        } catch (javax.swing.text.BadLocationException ex) {
+            ex.printStackTrace();
+        } finally {
+            undoGroup.end();
+            if (undoGroup.isSignificant()) undoMgr.addEdit(undoGroup);
+            undoGroup = null;
+        }
+        area.setCaretPosition(0);
+    }
+
+    /** 開啟方塊編輯器,編輯目前這一段 */
+    static void openBlockEditor() {
+        Object sel = combo.getSelectedItem();
+        String msg = BlockEditor.open(area.getText(), sel == null ? null : sel.toString(), new BlockEditor.Applier() {
+            public void apply(String newText) {
+                replaceAreaText(newText);
+                if (status != null) status.setText("已套用方塊編輯的結果(按 Ctrl+Z 可以還原)。改完後按右邊的按鈕,會把修改寫回 custom.ino:");
+            }
+        });
+        if (msg != null) JOptionPane.showMessageDialog(null, msg, "方塊編輯器", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /** 自動對齊目前這一段(只動空白)。整個動作算一次編輯,Ctrl+Z 一次就還原 */
+    static void formatCurrent() {
+        String before = area.getText();
+        String after;
+        try {
+            after = Fmt.format(before);
+        } catch (Throwable t) {
+            JOptionPane.showMessageDialog(null, "自動對齊失敗:" + t);
+            return;
+        }
+        if (after.equals(before)) {
+            if (status != null) status.setText("已經是對齊的,沒有需要整理的地方。");
+            return;
+        }
+        // 保險:整理前後,程式本身(不含空白和註解)必須完全一樣,不一樣就不套用
+        if (!Fmt.skeleton(before).equals(Fmt.skeleton(after))) {
+            JOptionPane.showMessageDialog(null, "自動對齊發現整理後的程式內容會改變,為了安全沒有套用。\n(這是對齊功能的問題,請告訴我這一段的內容。)");
+            return;
+        }
+        int caret = Math.min(area.getCaretPosition(), before.length());
+        undoGroup = new javax.swing.undo.CompoundEdit();
+        try {
+            ((javax.swing.text.AbstractDocument) area.getDocument()).replace(0, before.length(), after, null);
+        } catch (javax.swing.text.BadLocationException ex) {
+            ex.printStackTrace();
+        } finally {
+            undoGroup.end();
+            if (undoGroup.isSignificant()) undoMgr.addEdit(undoGroup);
+            undoGroup = null;
+        }
+        area.setCaretPosition(Math.min(caret, area.getDocument().getLength()));
+        if (status != null) status.setText("已自動對齊(按 Ctrl+Z 可以還原)。改完後按右邊的按鈕,會把修改寫回 custom.ino:");
+    }
+
     static void showSelected() {
         int i = combo.getSelectedIndex();
         if (i < 0 || i >= blocks.size()) { return; }
@@ -385,6 +506,7 @@ public class CodeTab {
         loading = true;
         area.setText(t);
         area.setCaretPosition(0);
+        undoMgr.discardAllEdits();   // 換一段時,舊的還原記錄不要帶過來
         loading = false;
     }
 

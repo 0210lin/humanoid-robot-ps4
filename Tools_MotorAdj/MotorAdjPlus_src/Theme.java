@@ -21,7 +21,27 @@ import javax.swing.plaf.FontUIResource;
  */
 public class Theme {
 
-    static final String FONT = "Microsoft JhengHei UI";
+    /**
+     * 介面字體。預設「Noto Sans TC」(比微軟正黑體粗一點);電腦沒裝的話退回「微軟正黑體 UI」。
+     * MotorAdjPlus.properties 加 fontName=字體名稱 可以換(例如 Microsoft JhengHei UI)
+     */
+    static String font() {
+        String s = Settings.raw("fontName");
+        if (!s.isEmpty()) return s;
+        if (installed("Noto Sans TC")) return "Noto Sans TC";
+        return "Microsoft JhengHei UI";
+    }
+
+    static java.util.Set<String> fontNames;
+
+    static boolean installed(String name) {
+        if (fontNames == null) {
+            fontNames = new java.util.HashSet<String>(java.util.Arrays.asList(
+                    java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
+        }
+        return fontNames.contains(name);
+    }
+
     // 配色:依外觀切換(淺色、深色用預設;科技風用霓虹色)
     static Color GREEN = new Color(0x2E, 0x9E, 0x5B);
     static Color RED = new Color(0xD6, 0x45, 0x45);
@@ -58,7 +78,7 @@ public class Theme {
     }
 
     static void setFonts(int size) {
-        FontUIResource f = new FontUIResource(new Font(FONT, Font.PLAIN, size));
+        FontUIResource f = new FontUIResource(new Font(font(), Font.PLAIN, size));
         UIDefaults d = UIManager.getDefaults();
         Enumeration<Object> keys = d.keys();
         while (keys.hasMoreElements()) {
