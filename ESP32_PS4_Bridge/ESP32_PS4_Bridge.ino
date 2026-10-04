@@ -208,27 +208,47 @@ void rumble(uint8_t pulses, uint16_t onMs, uint16_t offMs)
   rumT = 0;
 }
 
+// 按住這幾顆鍵時,手把持續震動,放開就停(Share / Options 不算)
+#define HOLD_RUMBLE_KEYS  (K_CIRCLE | K_SQUARE | K_R1 | K_L1)
+#define HOLD_SMALL        70     // 按住時:小馬達(輕輕的細震)強度 0~255
+#define HOLD_LARGE        0      // 按住時:大馬達(厚重的震)強度,0 = 不用,想要更明顯再調高
+
+static uint16_t rumCur = 0;      // 目前實際送給手把的震動(小馬達 | 大馬達 << 8)
+
 void updateRumble()
 {
   if (!PS4.isConnected()) {
     rumLeft = 0;
     rumIsOn = false;
+    rumCur = 0;
     return;
   }
   uint32_t now = millis();
+
+  // 事件震動(連上、切換、低電量)的節拍
   if (rumIsOn) {
     if (now - rumT >= rumOn) {
-      PS4.setRumble(0, 0);
-      PS4.sendToController();
       rumIsOn = false;
       rumT = now;
     }
   } else if (rumLeft > 0 && (rumT == 0 || now - rumT >= rumOff)) {
-    PS4.setRumble(RUMBLE_STRENGTH, RUMBLE_STRENGTH);
-    PS4.sendToController();
     rumIsOn = true;
     rumT = now;
     rumLeft--;
+  }
+
+  // 按住圈圈 / 方塊 / R1 / L1:持續震。Share(0x000F)和 Options(0x0170)是特殊組合碼,不算
+  uint16_t k = readKeys();
+  bool hold = (k != K_STOP) && (k != K_START) && (k & HOLD_RUMBLE_KEYS);
+
+  // 事件震動優先;沒有事件時,按住就持續震,放開就停
+  uint8_t wantS = rumIsOn ? RUMBLE_STRENGTH : (hold ? HOLD_SMALL : 0);
+  uint8_t wantL = rumIsOn ? RUMBLE_STRENGTH : (hold ? HOLD_LARGE : 0);
+  uint16_t want = wantS | ((uint16_t)wantL << 8);
+  if (want != rumCur) {                 // 只有強度改變時才送,不要一直送指令
+    PS4.setRumble(wantS, wantL);
+    PS4.sendToController();
+    rumCur = want;
   }
 }
 
