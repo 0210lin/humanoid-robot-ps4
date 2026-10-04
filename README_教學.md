@@ -105,7 +105,7 @@ PS4 手把只會連到它記住的「主機」。要把 ESP32 的 MAC 寫進手�
 | ○ | CIRCLE | 幀 23→24 |
 | □ | SQUARE | 幀 25→26 |
 | L1 / R1 | L1 / R1 | 幀 29→30 / 27→28 |
-| L2 / R2 | L2 / R2 | 按住時同時判斷搖桿:左搖桿往上、右搖桿往上、都沒往上(原本的動作)。往上的動作目前是註解 |
+| L2 / R2 | L2 / R2 | 單純的轉身(一個 do while)。「推左搖桿左 / 右的途中再按 L2 或 R2」的組合動作在左搖桿那一段(現在是註解的空位) |
 | **Options** | START | 開始 / 回站姿 |
 | **Share** | STOP | 馬達全部放鬆 |
 
@@ -244,15 +244,26 @@ switch (LS_DIR) {
 - L3 / R3 也是 `switch (pad_getStickButtons())`,三個 `case`(只按 L3、只按 R3、兩個一起按),各有 `do while`,條件是 `pad_getStickButtons() == PAD_L3 && pad_getKey() == 0`。
 - 每個 `case` 的 `break` 前,都預留了一行註解 `// SetFrameRun(1, 150);` 回站姿。
 
-**R2 / L2 搭配搖桿:** 按住 R2 或 L2 時,每一圈同時讀左、右搖桿:
+**L2 / R2 和左搖桿的組合:**
+- **單純按 L2 或 R2** = 轉身(一個 `do while`,按住一直轉,放開回站姿)。
+- **左搖桿往左 / 往右(單純推)** = 各有自己的動作,例如 `13`、`12`。
+- **推左搖桿往左或往右的「途中」再按 L2 或 R2** = **只換掉其中一個動作**,其他照舊。例如單純往左是 `13`、`12`,加按 L2 就變成 `13`、`60`(動作 1 共用,動作 2 換掉)。左搖桿的左、右各有 3 種:單純、+L2、+R2。這段寫在 `custom_stickFun()` 的左搖桿 `DIR_LEFT` / `DIR_RIGHT`:
 
 ```cpp
-if (LS_UP)      { do { 動作1; 動作2; custom_stickUpdate(); } while (pad_getKey() > 0 && LS_UP); }
-else if (RS_UP) { do { 動作1; 動作2; custom_stickUpdate(); } while (pad_getKey() > 0 && RS_UP); }
-else            { 原本 R2 / L2 的動作(也是 do while) }
+case DIR_LEFT:
+  do {
+    SetFrameRun(13, 100);                    // 動作 1:單純和組合共用
+    uint16_t k = pad_getKey();
+    if (k == PAD_BTN_L2)      { SetFrameRun(60, 90); }   // 往左 + L2:動作 2 換成 60
+    else if (k == PAD_BTN_R2) { SetFrameRun(61, 90); }   // 往左 + R2:動作 2 換成 61
+    else                      { SetFrameRun(12, 90); }   // 單純往左:動作 2 照舊
+    custom_stickUpdate();
+  } while (LS_DIR == DIR_LEFT && stickKeyOkForCombo());
 ```
 
-兩支搖桿同時往上時,只會做左搖桿的。這個寫法假設你不會同時推兩支搖桿。
+想換掉的是動作 1 而不是動作 2,就把 `SetFrameRun(13, 100)` 搬進 `if / else if / else` 裡,每個分支放不同的幀、動作 2 放到外面共用。
+
+**順序有差:** 一定要**先推搖桿、再按 L2 / R2** 才會是組合動作。如果先按住 L2 / R2,程式已經在做轉身,搖桿不會被讀。
 
 **程式是輪流執行,不是同時:** `custom_loop()` 每一圈依序跑 `custom_gamepadKeyFun_kondo()`(按鍵)→ `custom_stickFun()`(搖桿)→ 檢查電腦連線。沒動作時一圈約 10 ms;某一邊在做動作時,另一邊要等它做完。左搖桿的動作做的時候,右搖桿不會被讀。
 

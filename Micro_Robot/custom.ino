@@ -219,6 +219,13 @@ void custom_stickUpdate()
   else                              RS_DIR = (ry >= 0) ? DIR_UP : DIR_DOWN;
 }
 
+// 左搖桿左 / 右的動作用:沒按鍵,或只按 L2 / R2(組合鍵),都讓動作繼續;按了別的鍵就跳出去讓按鍵動作接手
+static uint8_t stickKeyOkForCombo()
+{
+  uint16_t k = pad_getKey();
+  return k == 0 || k == PAD_BTN_L2 || k == PAD_BTN_R2;
+}
+
 void custom_stickFun()
 {
   custom_stickUpdate();
@@ -270,20 +277,34 @@ void custom_stickFun()
       } while (LS_DIR == DIR_DOWN && pad_getKey() == 0);
       // SetFrameRun(1, 150);      // 回站姿(幀 1)
       break;
-    case DIR_LEFT:
+    case DIR_LEFT:                  // 左搖桿往左。推的途中再加按 L2 或 R2,只會換掉其中一個動作
       do {
-        // SetFrameRun(1, 100);
-        // SetFrameRun(1, 90);
+        // SetFrameRun(1, 100);              // 動作 1:單純和組合共用(例如 13)
+        uint16_t k = pad_getKey();
+        if (k == PAD_BTN_L2) {              // 往左 + L2:動作 2 換成這個(例如 60)
+          // SetFrameRun(1, 90);
+        } else if (k == PAD_BTN_R2) {       // 往左 + R2:動作 2 換成這個
+          // SetFrameRun(1, 90);
+        } else {                            // 單純往左:動作 2 照舊(例如 12)
+          // SetFrameRun(1, 90);
+        }
         custom_stickUpdate();
-      } while (LS_DIR == DIR_LEFT && pad_getKey() == 0);
+      } while (LS_DIR == DIR_LEFT && stickKeyOkForCombo());
       // SetFrameRun(1, 150);      // 回站姿(幀 1)
       break;
-    case DIR_RIGHT:
+    case DIR_RIGHT:                 // 左搖桿往右。推的途中再加按 L2 或 R2,只會換掉其中一個動作
       do {
-        // SetFrameRun(1, 100);
-        // SetFrameRun(1, 90);
+        // SetFrameRun(1, 100);              // 動作 1:單純和組合共用
+        uint16_t k = pad_getKey();
+        if (k == PAD_BTN_L2) {              // 往右 + L2:動作 2 換成這個
+          // SetFrameRun(1, 90);
+        } else if (k == PAD_BTN_R2) {       // 往右 + R2:動作 2 換成這個
+          // SetFrameRun(1, 90);
+        } else {                            // 單純往右:動作 2 照舊
+          // SetFrameRun(1, 90);
+        }
         custom_stickUpdate();
-      } while (LS_DIR == DIR_RIGHT && pad_getKey() == 0);
+      } while (LS_DIR == DIR_RIGHT && stickKeyOkForCombo());
       // SetFrameRun(1, 150);      // 回站姿(幀 1)
       break;
     default:                        // DIR_CENTER:沒推
@@ -437,61 +458,21 @@ int16_t custom_gamepadKeyFun_kondo()
         SetFrameRun(1, 150);
         break;
 
-      case PAD_BTN_L2:               // L2:按住期間同時看左、右搖桿有沒有往上
+      // L2 / R2:單純的轉身(一個 do while)。按住就一直轉,放開回站姿。
+      // 「推左搖桿左 / 右的途中再加按 L2 或 R2」的組合動作,寫在 custom_stickFun() 的左搖桿那一段。
+      case PAD_BTN_L2:               // L2:轉身(左)
         do {
-          custom_stickUpdate();      // 重新讀搖桿,更新 LS_UP / RS_UP ...
-
-          if (LS_UP) {               // L2 + 左搖桿往上
-            do {
-              // SetFrameRun(1, 100);      // 動作 1
-              // SetFrameRun(1, 90);       // 動作 2
-              custom_stickUpdate();        // 內層要自己更新搖桿,不然出不來
-            } while (pad_getKey() > 0 && LS_UP);
-
-          } else if (RS_UP) {        // L2 + 右搖桿往上(左搖桿沒往上時才會判斷到這裡)
-            do {
-              // SetFrameRun(1, 100);      // 動作 1
-              // SetFrameRun(1, 90);       // 動作 2
-              custom_stickUpdate();
-            } while (pad_getKey() > 0 && RS_UP);
-
-          } else {                   // 兩支搖桿都沒往上:原本 L2 的動作
-            do {
-              SetFrameRun(15, 100);
-              SetFrameRun(16, 90);
-              custom_stickUpdate();
-            } while (pad_getKey() > 0 && !LS_UP && !RS_UP);
-          }
+          SetFrameRun(15, 100);
+          SetFrameRun(16, 90);
         } while (pad_getKey() > 0);
         SetFrameRun(15, 100);
         SetFrameRun(1, 150);
         break;
 
-      case PAD_BTN_R2:               // R2:按住期間同時看左、右搖桿有沒有往上
+      case PAD_BTN_R2:               // R2:轉身(右)
         do {
-          custom_stickUpdate();      // 重新讀搖桿,更新 LS_UP / RS_UP ...
-
-          if (LS_UP) {               // R2 + 左搖桿往上
-            do {
-              // SetFrameRun(1, 100);      // 動作 1
-              // SetFrameRun(1, 90);       // 動作 2
-              custom_stickUpdate();        // 內層要自己更新搖桿,不然出不來
-            } while (pad_getKey() > 0 && LS_UP);
-
-          } else if (RS_UP) {        // R2 + 右搖桿往上(左搖桿沒往上時才會判斷到這裡)
-            do {
-              // SetFrameRun(1, 100);      // 動作 1
-              // SetFrameRun(1, 90);       // 動作 2
-              custom_stickUpdate();
-            } while (pad_getKey() > 0 && RS_UP);
-
-          } else {                   // 兩支搖桿都沒往上:原本 R2 的動作
-            do {
-              SetFrameRun(15, 100);
-              SetFrameRun(17, 90);
-              custom_stickUpdate();
-            } while (pad_getKey() > 0 && !LS_UP && !RS_UP);
-          }
+          SetFrameRun(15, 100);
+          SetFrameRun(17, 90);
         } while (pad_getKey() > 0);
         SetFrameRun(15, 100);
         SetFrameRun(1, 150);
