@@ -128,6 +128,16 @@ static void padLed(uint8_t r, uint8_t g, uint8_t b, uint8_t onT, uint8_t offT)
   PS4.sendToController();
 }
 
+// ATOM Lite 內建的 RGB 燈:顏色沒變就不重送,避免一直寫燈
+static void atomLed(uint8_t r, uint8_t g, uint8_t b)
+{
+  static uint32_t last = 0xFFFFFFFF;
+  uint32_t c = ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+  if (c == last) return;
+  last = c;
+  neopixelWrite(ATOM_LED_PIN, r, g, b);
+}
+
 void updateLeds()
 {
   static LedMode mode = L_NONE;
@@ -137,12 +147,11 @@ void updateLeds()
 
   if (!PS4.isConnected()) {
     bool f = (millis() / 500) % 2;
-    neopixelWrite(ATOM_LED_PIN, f ? 40 : 0, f ? 30 : 0, 0);   // 等待連線:閃黃
+    atomLed(f ? 40 : 0, f ? 30 : 0, 0);                        // 手把還沒連上:ATOM 的燈閃黃
     mode = L_NONE;
     prevPs = false;
     return;
   }
-  neopixelWrite(ATOM_LED_PIN, 0, 0, 0);
 
   bool ps = PS4.PSButton();
   if (ps && !prevPs) {
@@ -161,6 +170,11 @@ void updateLeds()
   else if (microStatus & 0x01)        want = L_GREEN;
 #endif
   else                                want = L_BLUE;
+
+  // ATOM 自己的燈:手把連上就恆亮(顏色跟手把燈條一致,暗一點),電量顯示那 3 秒維持原本的顏色
+  if (want == L_LINK)       atomLed(40, 30, 0);
+  else if (want == L_BLUE)  atomLed(0, 15, 40);
+  else if (want == L_GREEN) atomLed(0, 40, 5);
 
   // 狀態改變,或每 2 秒補送一次(避免剛連上時第一次沒收到)
   if (want == mode && millis() - lastSend < 2000) return;

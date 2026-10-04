@@ -219,6 +219,36 @@ void custom_stickUpdate()
   else                              RS_DIR = (ry >= 0) ? DIR_UP : DIR_DOWN;
 }
 
+// 除錯用:進到左搖桿的哪個分支,就在序列監控印一行(只在分支改變時印,不會洗版)。
+// 例如 ">> LS LEFT + L2" 就代表程式真的進到「往左 + L2」那一段。pad.h 的 PAD_DEBUG_PRINT 設 0 就全部不編進去。
+#if PAD_DEBUG_PRINT
+static uint8_t comboLast = 0;
+static void comboLog(uint8_t id)
+{
+  if (id == comboLast) {
+    return;
+  }
+  comboLast = id;
+  if (uart_isUartMode != 0) {
+    return;
+  }
+  if (id == 0) {
+    Serial.println(F("<< LS exit"));    // 離開左搖桿的動作(搖桿回中、或按了別的鍵)
+    return;
+  }
+  switch (id) {
+    case 1: Serial.println(F(">> LS LEFT"));        break;
+    case 2: Serial.println(F(">> LS LEFT + L2"));   break;
+    case 3: Serial.println(F(">> LS LEFT + R2"));   break;
+    case 4: Serial.println(F(">> LS RIGHT"));       break;
+    case 5: Serial.println(F(">> LS RIGHT + L2"));  break;
+    case 6: Serial.println(F(">> LS RIGHT + R2"));  break;
+  }
+}
+#else
+#define comboLog(id)
+#endif
+
 // 左搖桿左 / 右的動作用:沒按鍵,或只按 L2 / R2(組合鍵),都讓動作繼續;按了別的鍵就跳出去讓按鍵動作接手
 static uint8_t stickKeyOkForCombo()
 {
@@ -282,14 +312,18 @@ void custom_stickFun()
         // SetFrameRun(1, 100);              // 動作 1:單純和組合共用(例如 13)
         uint16_t k = pad_getKey();
         if (k == PAD_BTN_L2) {              // 往左 + L2:動作 2 換成這個(例如 60)
+          comboLog(2);
           // SetFrameRun(1, 90);
         } else if (k == PAD_BTN_R2) {       // 往左 + R2:動作 2 換成這個
+          comboLog(3);
           // SetFrameRun(1, 90);
         } else {                            // 單純往左:動作 2 照舊(例如 12)
+          comboLog(1);
           // SetFrameRun(1, 90);
         }
         custom_stickUpdate();
       } while (LS_DIR == DIR_LEFT && stickKeyOkForCombo());
+      comboLog(0);
       // SetFrameRun(1, 150);      // 回站姿(幀 1)
       break;
     case DIR_RIGHT:                 // 左搖桿往右。推的途中再加按 L2 或 R2,只會換掉其中一個動作
@@ -297,14 +331,18 @@ void custom_stickFun()
         // SetFrameRun(1, 100);              // 動作 1:單純和組合共用
         uint16_t k = pad_getKey();
         if (k == PAD_BTN_L2) {              // 往右 + L2:動作 2 換成這個
+          comboLog(5);
           // SetFrameRun(1, 90);
         } else if (k == PAD_BTN_R2) {       // 往右 + R2:動作 2 換成這個
+          comboLog(6);
           // SetFrameRun(1, 90);
         } else {                            // 單純往右:動作 2 照舊
+          comboLog(4);
           // SetFrameRun(1, 90);
         }
         custom_stickUpdate();
       } while (LS_DIR == DIR_RIGHT && stickKeyOkForCombo());
+      comboLog(0);
       // SetFrameRun(1, 150);      // 回站姿(幀 1)
       break;
     default:                        // DIR_CENTER:沒推
