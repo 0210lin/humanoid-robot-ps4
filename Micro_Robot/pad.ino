@@ -1,14 +1,14 @@
 /*
 pad.ino -- 接收 ESP32 送來的資料
-封包(9 位元組):0xAA, keyLow, keyHigh, LX, LY, RX, RY, stickBtn, checksum
-  搖桿值 = 實際值 + 128;checksum = 前 8 個位元組 XOR
+封包(10 位元組):0xAA, 0x55, keyLow, keyHigh, LX, LY, RX, RY, stickBtn, checksum
+  搖桿值 = 實際值 + 128;checksum = 前 9 個位元組 XOR
   三組資料互相獨立:一般按鍵 / 推搖桿 / 按下搖桿(L3、R3)
 */
 #include <SoftwareSerial.h>
 #include "pad.h"
 #include "custom.h"
 
-#define PKT_LEN 9
+#define PKT_LEN 10
 
 extern volatile uint8_t uart_isUartMode;
 
@@ -72,7 +72,23 @@ static void pad_debugPrint()
   Serial.print(F("  RightStick X="));
   Serial.print(pad_stick[PAD_RX]);
   Serial.print(F(" Y="));
-  Serial.println(pad_stick[PAD_RY]);
+  Serial.print(pad_stick[PAD_RY]);
+  if(imu_present()){
+    imu_update();                       // 傾斜感測沒開啟時也讀,方便檢查接線和方向
+    int16_t p = imu_getPitch10();
+    int16_t r = imu_getRoll10();
+    Serial.print(F("  | IMU pitch="));
+    Serial.print(p / 10);
+    Serial.print('.');
+    Serial.print(abs(p % 10));
+    Serial.print(F(" roll="));
+    Serial.print(r / 10);
+    Serial.print('.');
+    Serial.print(abs(r % 10));
+  }else{
+    Serial.print(F("  | IMU: not found"));
+  }
+  Serial.println();
 }
 #endif
 
@@ -92,42 +108,73 @@ static void pad_sendStatus()
   espSerial.write((uint8_t)~s);
 }
 
+// 收到一個完整、檢查碼正確的封包
+static void pad_accept()
+{
+  pad_lastKey = pad_buf[2] | ((uint16_t)pad_buf[3] << 8);
+  if(pad_lastKey == 0){
+    pad_served = 0;                     // 放開了
+  }else if(pad_lastKey != pad_served){
+    // 這個鍵程式還沒親眼看到過(忙碌時按的),記起來,等程式有空時補處理一次
+    if(pad_lastKey == PAD_BTN_STOP){
+      pad_pending = PAD_BTN_STOP;       // Share 絕對不能漏掉
+    }else if(pad_pending != PAD_BTN_STOP){
+      pad_pending = pad_lastKey;
+    }
+  }
+  for(uint8_t i = 0; i < 4; i++){
+    pad_stick[i] = (int16_t)pad_buf[4 + i] - 128;
+  }
+  pad_stickBtn = pad_buf[8];
+  pad_lastMs = millis();
+}
+
+// 一次餵一個位元組。封包開頭是兩個位元組 0xAA 0x55:
+// 只有 0xAA 一個位元組當開頭的話,檢查碼剛好是 0xAA 時(手把完全沒動),錯位一個位元組也會「剛好合法」,
+// 然後永遠卡在錯位的狀態。開頭加上 0x55,而且檢查碼不對時從下一個位元組重新找開頭,就不會了。
+static void pad_feed(uint8_t b)
+{
+  if(pad_idx == 0){
+    if(b == 0xAA){
+      pad_buf[pad_idx++] = b;
+    }
+    return;
+  }
+  if(pad_idx == 1 && b != 0x55){
+    pad_idx = 0;
+    if(b == 0xAA){
+      pad_buf[pad_idx++] = b;
+    }
+    return;
+  }
+  pad_buf[pad_idx++] = b;
+  if(pad_idx < PKT_LEN){
+    return;
+  }
+  pad_idx = 0;
+  uint8_t chk = 0;
+  for(uint8_t i = 0; i < PKT_LEN - 1; i++){
+    chk ^= pad_buf[i];
+  }
+  if(chk == pad_buf[PKT_LEN - 1]){
+    pad_accept();
+    return;
+  }
+  // 檢查碼不對:可能開頭抓錯位置,從第 2 個位元組起重新找開頭
+  uint8_t tmp[PKT_LEN - 1];
+  for(uint8_t i = 0; i < PKT_LEN - 1; i++){
+    tmp[i] = pad_buf[i + 1];
+  }
+  for(uint8_t i = 0; i < PKT_LEN - 1; i++){
+    pad_feed(tmp[i]);
+  }
+}
+
 // 讀完目前收到的資料,保留最新的一筆有效封包
 static void pad_poll()
 {
   while(espSerial.available()){
-    uint8_t b = espSerial.read();
-
-    if(pad_idx == 0 && b != 0xAA){
-      continue;                         // 等封包開頭
-    }
-    pad_buf[pad_idx++] = b;
-
-    if(pad_idx == PKT_LEN){
-      pad_idx = 0;
-      uint8_t chk = 0;
-      for(uint8_t i = 0; i < PKT_LEN - 1; i++){
-        chk ^= pad_buf[i];
-      }
-      if(chk == pad_buf[PKT_LEN - 1]){
-        pad_lastKey = pad_buf[1] | ((uint16_t)pad_buf[2] << 8);
-        if(pad_lastKey == 0){
-          pad_served = 0;                   // 放開了
-        }else if(pad_lastKey != pad_served){
-          // 這個鍵程式還沒親眼看到過(忙碌時按的),記起來,等程式有空時補處理一次
-          if(pad_lastKey == PAD_BTN_STOP){
-            pad_pending = PAD_BTN_STOP;     // Share 絕對不能漏掉
-          }else if(pad_pending != PAD_BTN_STOP){
-            pad_pending = pad_lastKey;
-          }
-        }
-        for(uint8_t i = 0; i < 4; i++){
-          pad_stick[i] = (int16_t)pad_buf[3 + i] - 128;
-        }
-        pad_stickBtn = pad_buf[7];
-        pad_lastMs = millis();
-      }
-    }
+    pad_feed(espSerial.read());
   }
   pad_sendStatus();
 #if PAD_DEBUG_PRINT

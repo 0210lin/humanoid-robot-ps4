@@ -103,7 +103,7 @@ static uint8_t bno_read(uint8_t reg, uint8_t *buf, uint8_t len)
 
 void imu_init()
 {
-  PORTD |= _BV(PD0) | _BV(PD1);         // 上拉
+  // 不開內建上拉(內建上拉會拉到 5V,可能灌進只能 3.3V 的感測器);上拉電阻由模組或板子的 I2C 接頭提供
   TWSR = 0;
   TWBR = 72;                            // 100 kHz
   TWCR = _BV(TWEN);

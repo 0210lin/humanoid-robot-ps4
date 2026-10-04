@@ -13,9 +13,9 @@ PS4 手把 (藍牙) -> M5Stack ATOM Lite -> UART -> Arduino Micro
   2. 推搖桿的類比值       (LX, LY, RX, RY)  -128 ~ 127,Y 向上為正
   3. 按下搖桿 L3 / R3     (stickBtn)       bit0 = L3, bit1 = R3
 
-封包(9 位元組,每 100ms 一次):
-  0xAA, keyLow, keyHigh, LX, LY, RX, RY, stickBtn, checksum
-  搖桿值 = 實際值 + 128(0~255);checksum = 前 8 個位元組 XOR
+封包(10 位元組,每 100ms 一次):
+  0xAA, 0x55, keyLow, keyHigh, LX, LY, RX, RY, stickBtn, checksum
+  搖桿值 = 實際值 + 128(0~255);checksum = 前 9 個位元組 XOR
 按鍵位元定義見 Micro_Robot/pad.h。
 */
 
@@ -50,7 +50,7 @@ PS4 手把 (藍牙) -> M5Stack ATOM Lite -> UART -> Arduino Micro
 #define SB_R3       0x02
 
 // 只包含一般按鍵,不含搖桿
-uint16_t readKeys()
+uint16_t readKeysLive()
 {
   if (!PS4.isConnected()) return 0;
 
@@ -74,7 +74,7 @@ uint16_t readKeys()
 }
 
 // 只包含 L3 / R3
-uint8_t readStickButtons()
+uint8_t readStickButtonsLive()
 {
   if (!PS4.isConnected()) return 0;
 
@@ -277,10 +277,85 @@ void updateEvents()
   }
 }
 
+
+// ====== 手把資料快照(只收「正常的報告」)======
+// 手把正常的報告,原始封包的第 9、10 個位元組是 A1 11。不是這個開頭的封包(別種報告、雜訊)
+// 函式庫還是會照正常格式去解讀,解出亂按的鍵和推到底的搖桿。
+// 所以每筆報告進來,先檢查開頭;正常的才把按鍵和搖桿存進快照,其他的丟掉(保留上一筆正常的)。
+// 後面送給 Micro 的資料,一律從快照讀,不直接讀函式庫。
+static volatile uint16_t snapKeys = 0;
+static volatile uint8_t  snapSb = 0;
+static volatile int8_t   snapLX = 0, snapLY = 0, snapRX = 0, snapRY = 0;
+static volatile uint32_t badCount = 0;
+static volatile uint8_t  badHdr[24];
+
+uint16_t readKeys()          { return PS4.isConnected() ? snapKeys : 0; }
+uint8_t  readStickButtons()  { return PS4.isConnected() ? snapSb : 0; }
+// ====== 診斷(找「閒置一段時間後出現怪資料」的原因)======
+// DIAG_PRINT = 1:每秒在序列監控印一行 "DIAG reports/s=… hdr=…",
+// 內容是這一秒收到幾筆手把報告,以及最近一筆原始封包的前幾個位元組。
+// 怪資料出現時,把這一行貼給我。查完原因可以設成 0。
+#define DIAG_PRINT 1
+#define PAD_SETTLE_MS 500      // 連上後至少等這麼久才放行(避開剛連上時的亂資料)
+
+static volatile uint32_t diagCount = 0;
+static volatile bool     gotReport = false;   // 連上之後,是否已經收到手把的報告
+static volatile uint8_t  diagHdr[24];
+
+static void onPadReport()
+{
+  diagCount++;
+  const uint8_t* p = PS4.data.latestPacket;
+  bool valid = p && p[9] == 0xA1 && p[10] == 0x11;
+  if (p) {
+    for (int i = 0; i < 24; i++) diagHdr[i] = p[i];
+  }
+  if (!valid) {
+    badCount++;                         // 不是正常報告:丟掉,保留上一筆正常的快照
+    if (p) {
+      for (int i = 0; i < 24; i++) badHdr[i] = p[i];
+    }
+    return;
+  }
+  snapKeys = readKeysLive();
+  snapSb = readStickButtonsLive();
+  snapLX = PS4.LStickX();
+  snapLY = PS4.LStickY();
+  snapRX = PS4.RStickX();
+  snapRY = PS4.RStickY();
+  gotReport = true;
+}
+
+static void diagLoop()
+{
+#if DIAG_PRINT
+  static uint32_t lastMs = 0;
+  static uint32_t lastCount = 0;
+  static uint32_t lastBad = 0;
+  if (millis() - lastMs < 1000) return;
+  lastMs = millis();
+  uint32_t c = diagCount;
+  uint32_t b = badCount;
+  if (PS4.isConnected()) {
+    Serial.printf("DIAG reports/s=%u bad=%u hdr=", (unsigned)(c - lastCount), (unsigned)(b - lastBad));
+    for (int i = 0; i < 24; i++) Serial.printf("%02X ", diagHdr[i]);
+    Serial.printf(" LX=%d LY=%d RX=%d RY=%d\n", snapLX, snapLY, snapRX, snapRY);
+    if (b != lastBad) {                 // 這一秒有丟掉的封包:把它的內容也印出來
+      Serial.print("DIAG BAD-PACKET hdr=");
+      for (int i = 0; i < 24; i++) Serial.printf("%02X ", badHdr[i]);
+      Serial.println();
+    }
+  }
+  lastCount = c;
+  lastBad = b;
+#endif
+}
+
 void setup()
 {
   Serial.begin(115200);
   Serial2.begin(LINK_BAUD, SERIAL_8N1, RX2_PIN, TX2_PIN);
+  PS4.attach(onPadReport);
   PS4.begin(PS4_MAC);
   Serial.println("Waiting for PS4 controller...");
 }
@@ -291,6 +366,7 @@ void loop()
   updateLeds();
   updateEvents();
   updateRumble();
+  diagLoop();
 
   // 連續取樣、把這一個傳送週期內「出現過」的按鍵鎖住(很快按一下也不會漏掉)。
   // Share / Options 是特殊組合碼,不能跟別的按鍵 OR 在一起,所以分開記:Share 優先,其次 Options。
@@ -308,22 +384,37 @@ void loop()
   last = millis();
 
   bool on = PS4.isConnected();
+
+  // 手把剛連上時,函式庫裡還是沒初始化的內容(會解讀出亂按的鍵和推到底的搖桿)。
+  // 連上後要先收到手把的報告、而且過了 PAD_SETTLE_MS,才開始送真正的資料;之前一律送「什麼都沒按」。
+  static bool     wasOn = false;
+  static uint32_t connectMs = 0;
+  if (on && !wasOn) {
+    connectMs = millis();
+    gotReport = false;
+  }
+  wasOn = on;
+  bool ready = on && gotReport && (millis() - connectMs >= PAD_SETTLE_MS);
+  if (!ready) {
+    latchKeys = 0; latchStart = false; latchStop = false; latchSb = 0;
+  }
   uint16_t k = latchStop ? K_STOP : (latchStart ? K_START : latchKeys);
   uint8_t  sb = latchSb;
   latchKeys = 0; latchStart = false; latchStop = false; latchSb = 0;
 
-  uint8_t pkt[9];
+  uint8_t pkt[10];
   pkt[0] = 0xAA;
-  pkt[1] = k & 0xFF;
-  pkt[2] = k >> 8;
-  pkt[3] = on ? (uint8_t)(PS4.LStickX() + 128) : 128;
-  pkt[4] = on ? (uint8_t)(PS4.LStickY() + 128) : 128;
-  pkt[5] = on ? (uint8_t)(PS4.RStickX() + 128) : 128;
-  pkt[6] = on ? (uint8_t)(PS4.RStickY() + 128) : 128;
-  pkt[7] = sb;
-  pkt[8] = 0;
-  for (int i = 0; i < 8; i++) pkt[8] ^= pkt[i];
-  Serial2.write(pkt, 9);
+  pkt[1] = 0x55;                        // 兩個位元組的開頭,避免檢查碼剛好等於 0xAA 時 Micro 對齊錯位
+  pkt[2] = k & 0xFF;
+  pkt[3] = k >> 8;
+  pkt[4] = ready ? (uint8_t)(snapLX + 128) : 128;
+  pkt[5] = ready ? (uint8_t)(snapLY + 128) : 128;
+  pkt[6] = ready ? (uint8_t)(snapRX + 128) : 128;
+  pkt[7] = ready ? (uint8_t)(snapRY + 128) : 128;
+  pkt[8] = sb;
+  pkt[9] = 0;
+  for (int i = 0; i < 9; i++) pkt[9] ^= pkt[i];
+  Serial2.write(pkt, 10);
 
   static uint32_t prev = 0xFFFFFFFF;
   uint32_t now = ((uint32_t)sb << 16) | k;
