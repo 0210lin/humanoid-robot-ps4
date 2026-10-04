@@ -136,11 +136,13 @@ public class Theme {
                 }
             }
             current = name;
+            Center.beforeThemeChange();   // 放大過的字體先還原,不然換外觀後字體會卡在舊的
             for (Window w : Window.getWindows()) {
                 SwingUtilities.updateComponentTreeUI(w);
                 fixColors(w);
                 w.repaint();
             }
+            Center.afterThemeChange();    // 記下新外觀的字體,再依目前視窗大小重新放大
             Background.apply();   // 遮罩的顏色會跟著外觀改變
             Steps.repaintAll();   // 馬達的 -/+ 按鈕重新上色
             Plus.syncThemeBox(name);

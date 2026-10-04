@@ -279,6 +279,8 @@ public class Plus {
             t.printStackTrace();
         }
         Background.apply();   // 所有分頁都建好之後,套用自訂背景
+        Center.install();         // 固定座標的分頁置中(視窗放大時比例不變)
+        Center.maximizeAtStart(); // 啟動時最大化
         return true;
     }
 
