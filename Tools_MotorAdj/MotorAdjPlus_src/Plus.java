@@ -152,7 +152,7 @@ public class Plus {
         setBtn.setBounds(sx, export.getY() + 32, 102, export.getHeight());
         setBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                Settings.showDialog(null);
+                if (License.require("路徑設定")) Settings.showDialog(null);
             }
         });
         p.add(setBtn);
@@ -264,6 +264,21 @@ public class Plus {
         p.repaint();
 
         try {
+            License.install(p);   // 「教師解鎖…」:教師功能需要老師簽發、綁定這台電腦的金鑰檔
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        try {
+            QuickFrames.install(p);   // quick test of two frames (top right of the motor tab)
+        } catch (Throwable tq) {
+            tq.printStackTrace();
+        }
+        try {
+            FrameIO.install(p);   // 批量匯出 / 批量載入 .frame
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        try {
             hookDisableAll();
         } catch (Throwable t) {
             t.printStackTrace();
@@ -275,6 +290,21 @@ public class Plus {
         }
         try {
             MirrorTab.install();
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        try {
+            SequenceTab.install();
+        } catch (Throwable ts) {
+            ts.printStackTrace();
+        }
+        try {
+            RobotTab.install();   // 3D robot tab (STL model + joint setup)   // 「動作序列」:依序打 SetFrameRun(幀, 毫秒); 就能播出動作(模擬或真的送給機器人)
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        try {
+            PortWatch.install();   // 串口清單自動更新(之後才插上板子也抓得到)
         } catch (Throwable t) {
             t.printStackTrace();
         }

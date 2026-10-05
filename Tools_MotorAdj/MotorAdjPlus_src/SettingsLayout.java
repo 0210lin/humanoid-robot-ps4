@@ -124,6 +124,13 @@ public class SettingsLayout {
         put(Plus.themeBoxRef, X + PAD + 100, 452, 210, 28);
         put(Plus.bgButton, X + PAD, 496, 316, 32);
 
+        // 教師功能(要老師簽發、綁定這台電腦的金鑰才能解鎖)
+        try {
+            License.installSettings(sp);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
         // ---------- 右邊:三張卡片 ----------
         if (StatusCards.card1 != null) StatusCards.card1.setBounds(450, 30, 560, 150);
         if (StatusCards.card2 != null) StatusCards.card2.setBounds(450, 196, 275, 350);

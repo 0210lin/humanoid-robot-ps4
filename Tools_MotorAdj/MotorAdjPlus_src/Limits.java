@@ -215,7 +215,7 @@ public class Limits {
         btn.setBounds(150, 603, 120, 27);
         btn.setToolTipText("每顆馬達各自設定最小 / 最大位置(預設 ±900)");
         btn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent e) { showDialog(); }
+            public void actionPerformed(java.awt.event.ActionEvent e) { if (License.require("各馬達範圍")) showDialog(); }
         });
         panel.add(btn);
 
