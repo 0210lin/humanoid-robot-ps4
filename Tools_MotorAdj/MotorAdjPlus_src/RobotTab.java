@@ -170,6 +170,7 @@ public class RobotTab {
                             updateServoLabels();
                             loaded = true;
                             loading = false;
+                            SimView.rebuild();
                             lastPose = null;
                             String msg = parts.size() + " 個零件," + fTotal + " 個三角形" + (fTotal > fCnt ? "(降到 " + fCnt + ")" : "") + "。資料夾:" + dir.getName();
                             if (!errors.isEmpty()) msg += "<br>有 " + errors.size() + " 個檔讀不了:" + errors.get(0);
@@ -190,6 +191,7 @@ public class RobotTab {
     static void changed() {
         if (saveTimer != null) saveTimer.restart();
         lastPose = null;
+        SimView.rebuild();
     }
 
     static void saveNow() {

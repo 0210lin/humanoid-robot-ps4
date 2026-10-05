@@ -682,7 +682,8 @@ public class SequenceTab {
         bars = new Bars();
         JPanel barBox = new JPanel(new BorderLayout());
         barBox.setBorder(BorderFactory.createTitledBorder("26 顆馬達的位置(長條 = 位置,下面的數字 = 相對 1500)"));
-        barBox.add(bars, BorderLayout.CENTER);
+        barBox.add(SimView.install(bars), BorderLayout.CENTER);
+        barBox.setBorder(BorderFactory.createTitledBorder("機器人模擬(左鍵拖曳旋轉、右鍵平移、滾輪縮放)"));
 
         JScrollPane stepsSp = new JScrollPane(area);
         stepsSp.setBorder(BorderFactory.createTitledBorder("實際會播的步驟"));
@@ -767,7 +768,7 @@ public class SequenceTab {
         // 起始位置:全部放在中心(1500)
         for (int m = 0; m < N; m++) { from[m] = 1500; to[m] = 1500; tm[m] = 1; }
         new javax.swing.Timer(33, new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent e) { if (tabPanel.isShowing()) bars.repaint(); }
+            public void actionPerformed(java.awt.event.ActionEvent e) { if (tabPanel.isShowing()) SimView.tick(bars); }
         }).start();
         return true;
     }
