@@ -2,3 +2,6 @@ meshes/
 __pycache__/
 *.pyc
 MUJOCO_LOG.TXT
+runs/
+runs_*.log
+runs_*.err

@@ -279,6 +279,11 @@ public class Plus {
             t.printStackTrace();
         }
         try {
+            MotorSim.install(p);   // 馬達參數分頁右下角的機器人 3D 模擬
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        try {
             hookDisableAll();
         } catch (Throwable t) {
             t.printStackTrace();

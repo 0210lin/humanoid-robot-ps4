@@ -49,7 +49,7 @@ public class Viewport3D extends JPanel {
     double[] axisMarker = null;
 
     // 相機
-    double yaw = 0.5, pitch = 0.25, dist = 800;
+    double yaw = Math.PI - 0.5, pitch = 0.25, dist = 800;
     double[] target = {0, 0, 0};
     final double fovDeg = 38;
 
@@ -163,8 +163,11 @@ public class Viewport3D extends JPanel {
 
     static int[] palette = {0x6f8fb3, 0xb38f6f, 0x8fb36f, 0xb36f9a, 0x6fb3a8, 0xb3a86f, 0x8a6fb3, 0xb36f6f, 0x6fb38a, 0x6f9ab3};
 
+    static final int SERVO_COLOR = 0xe0607e, PLATE_COLOR = 0x8b929c;
+
     int baseColor(Part p) {
-        if (!colorByOwner || p.owner == 0) return 0x8b929c;
+        if (p.name != null && p.name.contains("舵機")) return SERVO_COLOR;      // 伺服馬達固定粉紅色
+        if (!colorByOwner || p.owner == 0) return PLATE_COLOR;                   // 其他零件同一個灰色
         return palette[p.owner % palette.length];
     }
 

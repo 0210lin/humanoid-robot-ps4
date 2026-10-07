@@ -88,7 +88,7 @@
   </asset>
   <worldbody>
     <body name="pelvis" pos="0 0 0">
-      <inertial pos="-0.0678838 0.0709842 0.0596699" mass="0.2535478" fullinertia="1.601150e-04 2.161434e-04 2.993810e-04 1.782892e-08 4.422012e-07 2.713503e-06"/>
+      <inertial pos="-0.0678871 0.0705467 0.0596811" mass="0.2538562" fullinertia="1.615698e-04 2.151110e-04 2.990329e-04 3.607383e-09 4.563737e-07 2.604157e-06"/>
       <geom type="mesh" mesh="m14" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
       <geom type="mesh" mesh="m15" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
       <geom type="mesh" mesh="m16" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
@@ -96,8 +96,8 @@
       <geom type="mesh" mesh="m79" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
       <geom type="mesh" mesh="m80" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
       <body name="b01" pos="0 0 0">
-        <joint name="j_b01" type="hinge" pos="-0.06783 0.09045 0.06204" axis="0 1 0" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-        <inertial pos="-0.037048 0.11538 0.0610743" mass="0.213973" fullinertia="1.467379e-04 6.064110e-04 6.307081e-04 1.176466e-04 1.730241e-05 -5.075390e-06"/>
+        <joint name="j_b01" type="hinge" pos="-0.06783 0.09045 0.06204" axis="0 1 0" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+        <inertial pos="-0.0373845 0.115669 0.0610959" mass="0.2144841" fullinertia="1.470555e-04 5.996489e-04 6.246406e-04 1.149030e-04 1.703281e-05 -5.005316e-06"/>
         <geom type="mesh" mesh="m04" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
         <geom type="mesh" mesh="m05" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
         <geom type="mesh" mesh="m09" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
@@ -109,14 +109,14 @@
         <geom type="mesh" mesh="m67" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
         <geom type="mesh" mesh="m81" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
         <body name="b02" pos="0 0 0">
-          <joint name="j_b02" type="hinge" pos="0.01976 0.0896 0.04037" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-          <inertial pos="0.0528816 0.0911461 0.0590409" mass="0.02678918" fullinertia="2.216263e-05 2.943632e-05 9.015112e-06 8.183451e-07 2.226175e-13 3.939953e-14"/>
+          <joint name="j_b02" type="hinge" pos="0.01976 0.0896 0.04037" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+          <inertial pos="0.0528816 0.0911461 0.0590409" mass="0.0277901" fullinertia="2.299068e-05 3.053613e-05 9.351937e-06 8.489207e-07 2.309351e-13 4.087160e-14"/>
           <geom type="mesh" mesh="m23" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <geom type="mesh" mesh="m24" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <geom type="mesh" mesh="m28" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <body name="b03" pos="0 0 0">
-            <joint name="j_b03" type="hinge" pos="0.08486 0.08237 0.04037" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-            <inertial pos="0.11012 0.079506 0.0590409" mass="0.1364319" fullinertia="6.981888e-05 1.400820e-04 8.686012e-05 7.844729e-06 6.245793e-09 5.620995e-08"/>
+            <joint name="j_b03" type="hinge" pos="0.08486 0.08237 0.04037" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+            <inertial pos="0.110707 0.0794387 0.0590409" mass="0.1365403" fullinertia="6.997579e-05 1.412624e-04 8.793163e-05 7.952782e-06 6.089661e-09 5.480470e-08"/>
             <geom type="mesh" mesh="m07" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m08" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m17" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
@@ -126,24 +126,24 @@
           </body>
         </body>
         <body name="b04" pos="0 0 0">
-          <joint name="j_b04" type="hinge" pos="-0.1101 0.12783 0.05404" axis="-1 0 0" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-          <inertial pos="-0.13303 0.127826 0.0540455" mass="0.005737146" fullinertia="1.659366e-06 1.650068e-06 4.972060e-07 -1.429935e-12 -2.815348e-11 1.249553e-12"/>
+          <joint name="j_b04" type="hinge" pos="-0.1101 0.12783 0.05404" axis="-1 0 0" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+          <inertial pos="-0.13303 0.127826 0.0540455" mass="0.005951501" fullinertia="1.721361e-06 1.711716e-06 5.157792e-07 -1.483361e-12 -2.920537e-11 1.296240e-12"/>
           <geom type="mesh" mesh="m29" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <body name="b05" pos="0 0 0">
-            <joint name="j_b05" type="hinge" pos="-0.14498 0.12783 0.05382" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-            <inertial pos="-0.172978 0.127826 0.0537545" mass="0.0852517" fullinertia="1.256593e-05 4.554892e-05 4.214820e-05 1.924979e-07 -8.447218e-13 -1.469474e-14"/>
+            <joint name="j_b05" type="hinge" pos="-0.14498 0.12783 0.05382" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+            <inertial pos="-0.172978 0.127826 0.0537556" mass="0.08344791" fullinertia="1.235975e-05 4.452979e-05 4.114784e-05 1.876854e-07 -8.731723e-13 -1.455469e-14"/>
             <geom type="mesh" mesh="m10" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m12" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m32" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             <geom type="mesh" mesh="m33" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             <body name="b06" pos="0 0 0">
-              <joint name="j_b06" type="hinge" pos="-0.20098 0.12783 0.05382" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-              <inertial pos="-0.225628 0.127826 0.0540409" mass="0.007785618" fullinertia="3.023961e-06 5.402037e-06 2.890166e-06 3.968322e-17 9.857266e-20 -3.793019e-20"/>
+              <joint name="j_b06" type="hinge" pos="-0.20098 0.12783 0.05382" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+              <inertial pos="-0.225628 0.127826 0.0540409" mass="0.008076509" fullinertia="3.136940e-06 5.603867e-06 2.998146e-06 4.116589e-17 1.022556e-19 -3.934736e-20"/>
               <geom type="mesh" mesh="m30" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <geom type="mesh" mesh="m31" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <body name="b07" pos="0 0 0">
-                <joint name="j_b07" type="hinge" pos="-0.25028 0.12783 0.05382" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-                <inertial pos="-0.267902 0.127803 0.05383" mass="0.05787957" fullinertia="9.179947e-06 2.351320e-05 2.052201e-05 -4.002781e-08 1.561938e-07 6.645672e-08"/>
+                <joint name="j_b07" type="hinge" pos="-0.25028 0.12783 0.05382" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+                <inertial pos="-0.268266 0.127808 0.0538341" mass="0.0575476" fullinertia="9.185081e-06 2.372606e-05 2.069606e-05 -4.383321e-08 1.566139e-07 6.474100e-08"/>
                 <geom type="mesh" mesh="m11" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
                 <geom type="mesh" mesh="m19" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                 <geom type="mesh" mesh="m20" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
@@ -154,17 +154,17 @@
         </body>
       </body>
       <body name="b08" pos="0 0 0">
-        <joint name="j_b08" type="hinge" pos="-0.02183 0.08778 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-        <inertial pos="-0.0135352 0.0687583 0.0634269" mass="0.01173629" fullinertia="3.267989e-06 4.289115e-06 2.838073e-06 1.618905e-07 -1.314554e-08 2.136622e-07"/>
+        <joint name="j_b08" type="hinge" pos="-0.02183 0.08778 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+        <inertial pos="-0.0135352 0.0687583 0.0634269" mass="0.01217479" fullinertia="3.390086e-06 4.449364e-06 2.944107e-06 1.679391e-07 -1.363670e-08 2.216452e-07"/>
         <geom type="mesh" mesh="m76" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
         <body name="b10" pos="0 0 0">
           <joint name="j_b10" type="hinge" pos="-0.0125 0.050276 0.0797909" axis="1 0 0" damping="0.01" armature="0.0005"/>
-          <inertial pos="-0.0127277 0.0280337 0.0575965" mass="0.004442511" fullinertia="1.441113e-06 2.300156e-06 2.299771e-06 -5.763759e-21 -1.544775e-20 -6.658122e-07"/>
+          <inertial pos="-0.0127277 0.0280337 0.0575965" mass="0.004608495" fullinertia="1.494953e-06 2.386093e-06 2.385692e-06 -5.979108e-21 -1.602492e-20 -6.906887e-07"/>
           <geom type="mesh" mesh="m53" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <geom type="mesh" mesh="m54" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <body name="b09" pos="0 0 0">
-            <joint name="j_b09" type="hinge" pos="-0.0125 0.0113851 0.0409" axis="1 0 0" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-            <inertial pos="-0.0124806 -0.00300413 0.0270865" mass="0.09903108" fullinertia="4.484173e-05 2.982158e-05 3.558595e-05 -1.327485e-07 -2.177971e-07 2.999166e-07"/>
+            <joint name="j_b09" type="hinge" pos="-0.0125 0.0113851 0.0409" axis="1 0 0" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+            <inertial pos="-0.0124836 -0.00299833 0.0268531" mass="0.09774213" fullinertia="4.455698e-05 2.986070e-05 3.520892e-05 -1.292939e-07 -2.178239e-07 3.083694e-07"/>
             <geom type="mesh" mesh="m00" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m06" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m37" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
@@ -175,19 +175,19 @@
             <geom type="mesh" mesh="m70" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             <geom type="mesh" mesh="m71" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             <body name="b13" pos="0 0 0">
-              <joint name="j_b13" type="hinge" pos="-0.0125 -0.0173649 0.0409" axis="1 0 0" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-              <inertial pos="-0.0127277 -0.0340613 0.0575485" mass="0.004442511" fullinertia="1.441113e-06 2.299771e-06 2.300156e-06 6.248664e-21 -1.131062e-20 6.658122e-07"/>
+              <joint name="j_b13" type="hinge" pos="-0.0125 -0.0173649 0.0409" axis="1 0 0" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+              <inertial pos="-0.0127277 -0.0340613 0.0575485" mass="0.004608495" fullinertia="1.494953e-06 2.385692e-06 2.386093e-06 6.482131e-21 -1.173321e-20 6.906887e-07"/>
               <geom type="mesh" mesh="m55" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <geom type="mesh" mesh="m56" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <body name="b12" pos="0 0 0">
                 <joint name="j_b12" type="hinge" pos="-0.0125 -0.0562557 0.0797909" axis="1 0 0" damping="0.01" armature="0.0005"/>
-                <inertial pos="-0.0131172 -0.0748344 0.0641859" mass="0.01195561" fullinertia="3.472977e-06 4.528161e-06 2.861359e-06 -1.734026e-07 -9.990207e-09 -2.164559e-07"/>
+                <inertial pos="-0.0131172 -0.0748344 0.0641859" mass="0.0124023" fullinertia="3.602733e-06 4.697342e-06 2.968263e-06 -1.798813e-07 -1.036347e-08 -2.245432e-07"/>
                 <geom type="mesh" mesh="m51" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                 <geom type="mesh" mesh="m63" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                 <geom type="mesh" mesh="m64" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                 <body name="b15" pos="0 0 0">
-                  <joint name="j_b15" type="hinge" pos="-0.02183 -0.09376 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-                  <inertial pos="-0.0118797 -0.0995203 0.0586125" mass="0.0594088" fullinertia="2.691045e-05 2.997245e-05 1.589234e-05 4.991297e-07 1.949439e-07 -2.386329e-06"/>
+                  <joint name="j_b15" type="hinge" pos="-0.02183 -0.09376 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+                  <inertial pos="-0.0118499 -0.0997689 0.0584808" mass="0.05913396" fullinertia="2.746246e-05 3.058291e-05 1.598476e-05 5.069470e-07 1.998527e-07 -2.423420e-06"/>
                   <geom type="mesh" mesh="m13" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
                   <geom type="mesh" mesh="m35" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                   <geom name="foot_b15" type="box" pos="-0.0088277 -0.107506 0.0514909" size="0.03 0.00525 0.05" group="0" contype="1" conaffinity="1" friction="1 0.005 0.0001" rgba="0.2 0.8 0.3 0.3"/>
@@ -196,7 +196,7 @@
             </body>
             <body name="b14" pos="0 0 0">
               <joint name="j_b14" type="hinge" pos="-0.0125 -0.0303649 0.0054" axis="1 0 0" damping="0.01" armature="0.0005"/>
-              <inertial pos="-0.0127277 -0.0511818 0.0234739" mass="0.008516317" fullinertia="1.964198e-06 2.666496e-06 2.666496e-06 1.068386e-09 1.068389e-09 9.450620e-07"/>
+              <inertial pos="-0.0127277 -0.0511818 0.0234739" mass="0.008834509" fullinertia="2.037582e-06 2.766120e-06 2.766120e-06 1.108304e-09 1.108307e-09 9.803720e-07"/>
               <geom type="mesh" mesh="m42" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <geom type="mesh" mesh="m45" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <geom type="mesh" mesh="m46" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
@@ -205,23 +205,23 @@
         </body>
         <body name="b11" pos="0 0 0">
           <joint name="j_b11" type="hinge" pos="-0.0125 0.063276 0.0442909" axis="1 0 0" damping="0.01" armature="0.0005"/>
-          <inertial pos="-0.0127277 0.0438119 0.0248641" mass="0.003033819" fullinertia="9.336716e-07 1.545439e-06 1.545439e-06 -1.118325e-20 -2.510452e-21 -4.506653e-07"/>
+          <inertial pos="-0.0127277 0.0438119 0.0248641" mass="0.003147171" fullinertia="9.685523e-07 1.603177e-06 1.603177e-06 -1.160109e-20 -2.604249e-21 -4.675034e-07"/>
           <geom type="mesh" mesh="m43" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <geom type="mesh" mesh="m44" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
         </body>
       </body>
       <body name="b16" pos="0 0 0">
-        <joint name="j_b16" type="hinge" pos="-0.11383 0.08778 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-        <inertial pos="-0.12212 0.0687583 0.0634269" mass="0.0117363" fullinertia="3.267989e-06 4.289115e-06 2.838073e-06 -1.618906e-07 1.314558e-08 2.136622e-07"/>
+        <joint name="j_b16" type="hinge" pos="-0.11383 0.08778 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+        <inertial pos="-0.12212 0.0687583 0.0634269" mass="0.01217479" fullinertia="3.390086e-06 4.449364e-06 2.944107e-06 -1.679392e-07 1.363674e-08 2.216452e-07"/>
         <geom type="mesh" mesh="m78" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
         <body name="b18" pos="0 0 0">
           <joint name="j_b18" type="hinge" pos="-0.12315 0.050276 0.0797909" axis="-1 0 0" damping="0.01" armature="0.0005"/>
-          <inertial pos="-0.122928 0.0280577 0.0575725" mass="0.004442514" fullinertia="1.441119e-06 2.299967e-06 2.299967e-06 -2.007399e-09 2.007374e-09 -6.658101e-07"/>
+          <inertial pos="-0.122928 0.0280577 0.0575725" mass="0.004608498" fullinertia="1.494959e-06 2.385896e-06 2.385896e-06 -2.082401e-09 2.082375e-09 -6.906865e-07"/>
           <geom type="mesh" mesh="m57" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <geom type="mesh" mesh="m60" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <body name="b17" pos="0 0 0">
-            <joint name="j_b17" type="hinge" pos="-0.12315 0.0113851 0.0409" axis="-1 0 0" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-            <inertial pos="-0.123194 -0.0028628 0.029346" mass="0.09154274" fullinertia="3.728616e-05 2.300475e-05 3.362904e-05 -1.354604e-07 1.641716e-07 1.594298e-08"/>
+            <joint name="j_b17" type="hinge" pos="-0.12315 0.0113851 0.0409" axis="-1 0 0" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+            <inertial pos="-0.123192 -0.00286285 0.0292178" mass="0.08997401" fullinertia="3.680062e-05 2.287063e-05 3.317897e-05 -1.320727e-07 1.631193e-07 1.657666e-08"/>
             <geom type="mesh" mesh="m01" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m02" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
             <geom type="mesh" mesh="m39" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
@@ -231,17 +231,17 @@
             <geom type="mesh" mesh="m74" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             <geom type="mesh" mesh="m75" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             <body name="b21" pos="0 0 0">
-              <joint name="j_b21" type="hinge" pos="-0.12315 -0.0173649 0.0409" axis="-1 0 0" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-              <inertial pos="-0.122928 -0.0340613 0.0575485" mass="0.004442514" fullinertia="1.441114e-06 2.299772e-06 2.300158e-06 1.019013e-19 -1.357552e-19 6.658127e-07"/>
+              <joint name="j_b21" type="hinge" pos="-0.12315 -0.0173649 0.0409" axis="-1 0 0" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+              <inertial pos="-0.122928 -0.0340613 0.0575485" mass="0.004608498" fullinertia="1.494954e-06 2.385694e-06 2.386094e-06 1.057086e-19 -1.408273e-19 6.906892e-07"/>
               <geom type="mesh" mesh="m58" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <geom type="mesh" mesh="m59" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <body name="b20" pos="0 0 0">
                 <joint name="j_b20" type="hinge" pos="-0.12315 -0.0562557 0.0797909" axis="-1 0 0" damping="0.01" armature="0.0005"/>
-                <inertial pos="-0.12212 -0.074738 0.0634269" mass="0.0117363" fullinertia="3.267989e-06 4.289115e-06 2.838073e-06 1.618905e-07 1.314557e-08 -2.136622e-07"/>
+                <inertial pos="-0.12212 -0.074738 0.0634269" mass="0.01217479" fullinertia="3.390086e-06 4.449364e-06 2.944107e-06 1.679392e-07 1.363673e-08 -2.216452e-07"/>
                 <geom type="mesh" mesh="m77" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                 <body name="b23" pos="0 0 0">
-                  <joint name="j_b23" type="hinge" pos="-0.11383 -0.09631 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.02" armature="0.005" frictionloss="0.02"/>
-                  <inertial pos="-0.123811 -0.0997978 0.0586502" mass="0.06006914" fullinertia="2.698121e-05 3.011674e-05 1.584768e-05 -5.115918e-07 -1.886889e-07 -2.197456e-06"/>
+                  <joint name="j_b23" type="hinge" pos="-0.11383 -0.09631 0.06182" axis="0 0 -1" range="-3.14159 3.14159" damping="0.246" armature="0.005" frictionloss="0.02"/>
+                  <inertial pos="-0.123842 -0.100044 0.0585216" mass="0.05981897" fullinertia="2.753587e-05 3.073308e-05 1.593769e-05 -5.193286e-07 -1.931548e-07 -2.236367e-06"/>
                   <geom type="mesh" mesh="m03" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
                   <geom type="mesh" mesh="m36" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                   <geom name="foot_b23" type="box" pos="-0.126832 -0.107506 0.0514909" size="0.03 0.00525 0.05" group="0" contype="1" conaffinity="1" friction="1 0.005 0.0001" rgba="0.2 0.8 0.3 0.3"/>
@@ -252,7 +252,7 @@
             </body>
             <body name="b22" pos="0 0 0">
               <joint name="j_b22" type="hinge" pos="-0.12315 -0.0303649 0.0054" axis="-1 0 0" damping="0.01" armature="0.0005"/>
-              <inertial pos="-0.122928 -0.0497916 0.0248641" mass="0.003033822" fullinertia="9.336724e-07 1.545440e-06 1.545440e-06 6.447200e-19 -6.588691e-20 4.506657e-07"/>
+              <inertial pos="-0.122928 -0.0497916 0.0248641" mass="0.003147174" fullinertia="9.685532e-07 1.603178e-06 1.603178e-06 6.688084e-19 -6.834862e-20 4.675038e-07"/>
               <geom type="mesh" mesh="m48" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
               <geom type="mesh" mesh="m49" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
             </body>
@@ -260,7 +260,7 @@
         </body>
         <body name="b19" pos="0 0 0">
           <joint name="j_b19" type="hinge" pos="-0.12315 0.063276 0.0442909" axis="-1 0 0" damping="0.01" armature="0.0005"/>
-          <inertial pos="-0.122928 0.0438306 0.0248454" mass="0.003033822" fullinertia="9.336746e-07 1.545441e-06 1.545441e-06 -1.068438e-09 1.068438e-09 -4.506647e-07"/>
+          <inertial pos="-0.122928 0.0438306 0.0248454" mass="0.003147173" fullinertia="9.685554e-07 1.603179e-06 1.603179e-06 -1.108357e-09 1.108357e-09 -4.675027e-07"/>
           <geom type="mesh" mesh="m47" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
           <geom type="mesh" mesh="m50" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
         </body>
@@ -274,20 +274,20 @@
     <connect body1="b22" body2="b20" anchor="-0.12315 -0.0692557 0.0442909" solref="0.005 1"/>
   </equality>
   <actuator>
-    <position name="a_m15" joint="j_b01" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m01" joint="j_b02" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m03" joint="j_b03" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m08" joint="j_b04" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m09" joint="j_b05" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m10" joint="j_b06" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m22" joint="j_b07" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m04" joint="j_b08" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m05" joint="j_b09" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m06" joint="j_b13" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m07" joint="j_b15" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m11" joint="j_b16" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m12" joint="j_b17" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m13" joint="j_b21" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
-    <position name="a_m14" joint="j_b23" kp="30" kv="0.6" ctrlrange="-2.61799 2.61799" forcerange="-2 2"/>
+    <position name="a_m15" joint="j_b01" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m01" joint="j_b02" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m03" joint="j_b03" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m08" joint="j_b04" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m09" joint="j_b05" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m10" joint="j_b06" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m22" joint="j_b07" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m04" joint="j_b08" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m05" joint="j_b09" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m06" joint="j_b13" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m07" joint="j_b15" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m11" joint="j_b16" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m12" joint="j_b17" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m13" joint="j_b21" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
+    <position name="a_m14" joint="j_b23" kp="28" kv="0" ctrlrange="-2.61799 2.61799" forcerange="-2.45 2.45"/>
   </actuator>
 </mujoco>

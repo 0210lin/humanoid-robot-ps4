@@ -4,7 +4,7 @@
   "_total_mass_kg": "整台機器人實際重量(公斤,含電池)。填了之後,所有零件的質量會等比例縮放到這個總重。null = 不縮放,用下面的估計值。",
   "density_kg_m3": 1200,
   "_density": "一般零件(板子、支架)的密度估計:壓克力約 1200,鋁約 2700,3D 列印約 1100。",
-  "servo_mass_kg": 0.040,
+  "servo_mass_kg": 0.039,
   "_servo_mass": "每顆伺服馬達的質量估計(公斤)。零件名稱包含 servo_key 的都算伺服。",
   "servo_key": "舵機",
   "battery_kg": 0.045,
@@ -13,13 +13,14 @@
   "extra_electronics_kg": 0.0,
   "_extra": "電池、控制板、電線等 STL 沒有的重量,加在身體(骨盆)上。",
   "servo": {
-    "kp": 30.0,
-    "kv": 0.6,
-    "max_torque_nm": 2.0,
-    "joint_damping": 0.02,
+    "kp": 28.0,
+    "kv": 0.0,
+    "max_torque_nm": 2.45,
+    "joint_damping": 0.246,
     "joint_armature": 0.005,
     "joint_frictionloss": 0.02,
-    "range_deg": 150
+    "range_deg": 150,
+    "_說明": "依 cas-2595 規格(7.4V):扭力 25 kg·cm = 2.45 N·m;轉速 95 rpm = 9.95 rad/s(約 0.105 秒轉 60°)。joint_damping = 扭力 ÷ 最高轉速 = 2.45 ÷ 9.95 = 0.246,讓滿力矩時剛好跑到最高轉速(模擬伺服的速度上限)。kp = 扭力 ÷ 約 5° 的誤差 ≈ 28(誤差 5° 以上就滿力矩)。這些是規格表的理想值,還沒有跟真機比對。"
   },
   "passive": {
     "damping": 0.01,

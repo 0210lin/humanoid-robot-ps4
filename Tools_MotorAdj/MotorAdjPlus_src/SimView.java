@@ -27,7 +27,7 @@ public class SimView {
     static JPanel install(Component barsComp) {
         vp = new Viewport3D();
         vp.setMinimumSize(new Dimension(200, 160));
-        vp.yaw = 0.35;
+        vp.yaw = Math.PI - 0.35;
         vp.pitch = 0.12;
         cl = new CardLayout();
         card = new JPanel(cl);
@@ -56,7 +56,7 @@ public class SimView {
             vp.parts.add(c);
         }
         vp.up = RobotTab.vp.up;
-        vp.colorByOwner = true;
+        vp.colorByOwner = false;
         if (!fitted) {
             vp.fitToModel();
             vp.dist *= 0.7;

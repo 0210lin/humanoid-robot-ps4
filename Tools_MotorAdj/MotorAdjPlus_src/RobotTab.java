@@ -556,7 +556,7 @@ public class RobotTab {
         JButton unassigned = new JButton("選取還沒指定的");
         hideAssigned = new JCheckBox("隱藏已指定的零件");
         onlySelected = new JCheckBox("只顯示選中的");
-        colorBox = new JCheckBox("依馬達上色", true);
+        colorBox = new JCheckBox("依歸屬上色(彩色)", false);
         JPanel top2 = new JPanel(new BorderLayout(4, 4));
         top2.add(new JLabel("搜尋零件:"), BorderLayout.WEST);
         top2.add(filter, BorderLayout.CENTER);
@@ -885,7 +885,7 @@ public class RobotTab {
     /** 0 正面 1 背面 2 左側 3 右側 4 上方 5 重設 */
     static void setView(int k) {
         boolean z = "Z".equals(vp.up);
-        double[] yaws = {0, Math.PI, -Math.PI / 2, Math.PI / 2, 0, 0.5};
+        double[] yaws = {Math.PI, 0, -Math.PI / 2, Math.PI / 2, Math.PI, Math.PI - 0.5};   // 正面 = 有膝蓋的那一側 = 模型的 -Z 側
         double[] pitches = {0, 0, 0, 0, 1.45, 0.25};
         vp.yaw = yaws[k];
         vp.pitch = pitches[k];
