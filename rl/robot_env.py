@@ -148,12 +148,14 @@ class WalkEnv(StandEnv):
     V_TARGET = 0.12        # 目標前進速度 m/s
     CLEAR = 0.010          # 規則:抬起的腳要完全離地至少 1 公分(量的是整塊腳底的最低點)
 
-    def __init__(self, randomize=True, push=False, **kw):
+    def __init__(self, randomize=True, push=False, mode="fwd", **kw):
         super().__init__(randomize=randomize, push=push, **kw)
+        self.mode = mode          # "fwd" 往正面走;"right" 往右橫著走(螃蟹步);"left" 往左橫著走
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, (15 * 3 + 3 + 3 + 2,), np.float32)
         names = {mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, g): g for g in range(self.model.ngeom)}
         self.foot_r, self.foot_l = names["foot_b15"], names["foot_b23"]     # b15 = 右腳掌,b23 = 左腳掌
         self.floor_y = float(self.model.geom_pos[names["floor"]][1])
+        self._vtmp = np.zeros(6)
         self.act_scale = 0.5
 
     def foot_clear(self, g):
@@ -206,10 +208,29 @@ class WalkEnv(StandEnv):
         lift_r = float(np.clip(clr_r / self.CLEAR, 0.0, 1.0))      # 抬到 1 公分 = 1(滿分),沒離地 = 0
         lift_l = float(np.clip(clr_l / self.CLEAR, 0.0, 1.0))
         swing, stance = (lift_r, lift_l) if phase < 0.5 else (lift_l, lift_r)    # 前半拍抬右腳,後半拍抬左腳
-        r = (3.0 * hf * float(np.clip(vfwd / self.V_TARGET, -0.5, 1.2))
-             + 1.0 * swing - 1.0 * stance
+        # 速度分解成「身體正面」和「身體右手邊」兩個方向:只有朝正面走才算前進,橫著走(螃蟹步)拿不到分
+        Rm = d.xmat[1].reshape(3, 3)
+        nfw = max(1e-6, float(np.hypot(Rm[0, 2], Rm[2, 2])))
+        nrt = max(1e-6, float(np.hypot(Rm[0, 0], Rm[2, 0])))
+        vfb = float(d.qvel[0] * (-Rm[0, 2] / nfw) + d.qvel[2] * (-Rm[2, 2] / nfw))      # 沿身體正面的速度
+        vlb = float(d.qvel[0] * (Rm[0, 0] / nrt) + d.qvel[2] * (Rm[2, 0] / nrt))         # 沿身體右手邊的速度(橫移)
+        # 要往哪個方向走:track = 目標方向的速度,cross = 垂直那個方向的速度(要接近 0)
+        track, cross = (vfb, vlb) if self.mode == "fwd" else ((vlb, vfb) if self.mode == "right" else (-vlb, vfb))
+        vt = self.V_TARGET if self.mode == "fwd" else 0.08                                  # 橫著走的目標速度 8 cm/s
+        lift_w = 1.0 if self.mode == "fwd" else 0.0       # 抬腳 1 公分的規則只管往前走;側移(螃蟹步)不要求腳離地,所以不給抬腳獎勵
+        gate = float(np.exp(-(cross / 0.06) ** 2))                                      # 橫移 6 cm/s 以上,前進分數幾乎歸零
+        over = float(np.clip((max(clr_r, clr_l) - 0.02) / 0.02, 0.0, 1.0))             # 腳抬超過 2 公分開始小扣(1 公分就拿滿分,不需要抬更高)
+        # 貼地的腳不准滑:腳底水平速度超過約 5 cm/s,前進分數就迅速變少(堵住「滑冰」漏洞)
+        slip = 0.0
+        for g_, c_ in ((self.foot_r, clr_r), (self.foot_l, clr_l)):
+            if c_ < 0.001:
+                mujoco.mj_objectVelocity(self.model, self.data, mujoco.mjtObj.mjOBJ_GEOM, g_, self._vtmp, 0)
+                slip = max(slip, float(np.hypot(self._vtmp[3], self._vtmp[5])))
+        gs = float(np.exp(-(slip / 0.05) ** 2)) if self.mode == "fwd" else 1.0     # 側移允許滑行,只有往前走才禁止滑
+        r = (3.0 * hf * gate * gs * float(np.clip(min(track / vt, 2.0 - track / vt), -0.5, 1.0))
+             + lift_w * (1.0 * swing - 1.0 * stance)
              + 0.5 + 2.0 * (up - 1.0) + 5.0 * h
-             - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 1.0 * abs(vside) + 1.0 * hf)
+             - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 2.0 * abs(cross) - lift_w * 0.5 * over + 1.0 * hf)
         fell = up < 0.7 or h < -0.04
         self.prev_act = action.astype(np.float64)
         if fell:
@@ -218,4 +239,8 @@ class WalkEnv(StandEnv):
 
 
 def make_env(name, **kw):
+    if name.startswith("sidel"):
+        return WalkEnv(mode="left", **kw)
+    if name.startswith("side"):
+        return WalkEnv(mode="right", **kw)
     return WalkEnv(**kw) if name.startswith("walk") else StandEnv(**kw)
