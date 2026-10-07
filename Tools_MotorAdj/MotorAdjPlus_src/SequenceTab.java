@@ -539,6 +539,19 @@ public class SequenceTab {
         return r;
     }
 
+    static final int SINGLE_LOOP_MS = 200;
+
+    /** 這一串方塊裡(不算註解、程式碼、放鬆、沒啟用的)剛好只有一個動作方塊、沒有等待 / 如果 / 重複,就回傳它,否則回傳 null */
+    static Blocks.Node singleAction(List<Blocks.Node> list) {
+        Blocks.Node only = null;
+        for (Blocks.Node n : list) {
+            if (!n.enabled || n.type.equals("COMMENT") || n.type.equals("CODE") || n.type.equals("RELAX")) continue;
+            if (!n.type.equals("ACTION") || only != null) return null;
+            only = n;
+        }
+        return only;
+    }
+
     static void emit(StringBuilder sb, List<Blocks.Node> list, int d, int times, String held) {
         for (Blocks.Node n : list) {
             String pad = "";
@@ -548,7 +561,14 @@ public class SequenceTab {
             else if (n.type.equals("WAIT")) sb.append(pad).append("delay(").append(n.a.trim()).append(");\n");
             else if (n.type.equals("REPEAT")) {
                 sb.append(pad).append("repeat ").append(times).append(" {\n");
-                emit(sb, n.body, d + 1, times, held);
+                Blocks.Node only = singleAction(n.body);
+                if (only != null) {
+                    // 按鍵式 do while 裡只有一個動作:原本寫的時間很短(例如 20 ms,是給真機一直重送用的),模擬時改用 200 ms,動作才看得出來
+                    sb.append(pad).append("  // 迴圈裡只有一個動作 → 模擬改用 ").append(SINGLE_LOOP_MS).append(" ms(程式裡寫的是 ").append(only.b.trim()).append(")\n");
+                    sb.append(pad).append("  SetFrameRun(").append(only.a.trim()).append(", ").append(SINGLE_LOOP_MS).append(");\n");
+                } else {
+                    emit(sb, n.body, d + 1, times, held);
+                }
                 sb.append(pad).append("}\n");
             } else if (n.type.equals("IF")) {
                 boolean yes = condVal(n.cond, held);

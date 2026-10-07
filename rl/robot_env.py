@@ -190,6 +190,8 @@ class WalkEnv(StandEnv):
         da = action - self.prev_act
         vfwd = -d.qvel[2]                                      # 正面 = -Z
         vside = d.qvel[0]
+        fwd = -d.xmat[1].reshape(3, 3)[:, 2]                   # 骨盆的正面方向(世界座標);沒轉向時 = (0, 0, -1)
+        heading = float(-fwd[2] / max(1e-6, np.hypot(fwd[0], fwd[2])))   # 正面和正前方夾角的 cos,1 = 沒偏
         phase = (self.t % self.PERIOD) / self.PERIOD
         lift_r = np.clip(d.geom_xpos[self.foot_r][1] - self.foot_y0[0], 0, self.CLEAR) / self.CLEAR
         lift_l = np.clip(d.geom_xpos[self.foot_l][1] - self.foot_y0[1], 0, self.CLEAR) / self.CLEAR
@@ -197,7 +199,7 @@ class WalkEnv(StandEnv):
         r = (2.0 * np.exp(-((vfwd - self.V_TARGET) / 0.08) ** 2)
              + 1.0 * swing - 1.0 * stance
              + 0.5 + 2.0 * (up - 1.0) + 5.0 * h
-             - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 1.0 * abs(vside))
+             - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 1.0 * abs(vside) + 4.0 * (heading - 1.0))
         fell = up < 0.7 or h < -0.04
         self.prev_act = action.astype(np.float64)
         if fell:

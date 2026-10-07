@@ -108,6 +108,8 @@ public class Settings {
                         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                     } else if (mode == 1) {
                         fc.setFileFilter(new FileNameExtensionFilter("motor.h (*.h)", "h"));
+                    } else if (mode == 3) {
+                        fc.setFileFilter(new FileNameExtensionFilter("motor setting (*.config)", "config"));
                     } else {
                         fc.setFileFilter(new FileNameExtensionFilter("arduino-cli (*.exe)", "exe"));
                     }
@@ -160,6 +162,20 @@ public class Settings {
         c.gridx = 0; c.gridy = 5; c.gridwidth = 3; c.insets = new Insets(8, 6, 4, 6); c.anchor = GridBagConstraints.WEST;
         form.add(tip, c);
 
+        // 預設設定檔:啟動後自動載入
+        final JTextField fDefCfg = addRow(form, 6, "預設設定檔(啟動自動載入,空白 = 不載入):", DefaultConfig.shown(), 3, null);
+        JButton useCur = new JButton("把目前載入的設定檔設為預設");
+        useCur.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                String cur = DefaultConfig.currentPath();
+                if (cur.isEmpty()) JOptionPane.showMessageDialog(d, "讀不到目前載入的設定檔。");
+                else fDefCfg.setText(cur);
+            }
+        });
+        GridBagConstraints uc = new GridBagConstraints();
+        uc.gridx = 1; uc.gridy = 7; uc.anchor = GridBagConstraints.WEST; uc.insets = new Insets(0, 6, 6, 6);
+        form.add(useCur, uc);
+
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         JButton ok = new JButton("儲存");
         JButton cancel = new JButton("取消");
@@ -178,6 +194,7 @@ public class Settings {
                 fMotor.setText("");
                 fCli.setText("");
                 fPort.setText("");
+                fDefCfg.setText(DefaultConfig.FIRST_DEFAULT);
                 fTheme.setSelectedIndex(0);
             }
         });
@@ -209,6 +226,7 @@ public class Settings {
                 put("motorSrc", fMotor.getText().trim(), defMotorSrc());
                 put("cli", fCli.getText().trim(), defCli());
                 p.setProperty("port", fPort.getText().trim());
+                p.setProperty(DefaultConfig.KEY, fDefCfg.getText().trim());
                 String newTheme = themeKeys[fTheme.getSelectedIndex()];
                 boolean themeChanged = !newTheme.equals(Theme.name());
                 p.setProperty("theme", newTheme.equals("light") ? "" : newTheme);

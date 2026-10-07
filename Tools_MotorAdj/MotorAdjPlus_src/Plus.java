@@ -321,6 +321,11 @@ public class Plus {
         Background.apply();   // 所有分頁都建好之後,套用自訂背景
         Center.install();         // 固定座標的分頁置中(視窗放大時比例不變)
         Center.maximizeAtStart(); // 啟動時最大化
+        try {
+            DefaultConfig.autoLoad();   // 預設設定檔:啟動後自動載入
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         return true;
     }
 

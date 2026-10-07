@@ -50,14 +50,19 @@ public class QuickFrames {
         SwingUtilities.invokeLater(new Runnable() { public void run() { setText(s); } });
     }
 
-    /** 送前檢查:有連線、幀存在、沒有別的在播。回傳 null 表示可以送,否則是要顯示的原因 */
+    /** 連模擬都做不了的原因(在播放、沒有幀資料、幀不存在)。null = 可以 */
     static String problem(int f) {
         if (SequenceTab.running) return "「動作程式」分頁正在播放,先按停止。";
         int[][][] d = SequenceTab.frameData();
         if (d == null) return "找不到 MotorAdj 的幀資料。";
         if (f < 0 || f >= d.length) return "幀 " + f + " 不存在(目前有 0 ~ " + (d.length - 1) + ")。";
-        if (!SequenceTab.robotConnected()) return "機器人還沒連線:先到「設定」按「串口連接」,再按「開啟馬達」。";
-        if (!License.unlocked()) return "需要教師金鑰。";
+        return null;
+    }
+
+    /** 不能送給真機的原因(沒連線、沒金鑰)。null = 可以送。不能送時還是會在 3D 模擬裡顯示 */
+    static String sendProblem() {
+        if (!SequenceTab.robotConnected()) return "機器人沒連線,只在模擬裡顯示。要讓真機動:先到「設定」按「串口連接」,再按「開啟馬達」。";
+        if (!License.unlocked()) return "需要教師金鑰才能送給真機,只在模擬裡顯示。";
         return null;
     }
 
@@ -74,11 +79,14 @@ public class QuickFrames {
 
     static int val(SpinnerNumberModel m) { return ((Number) m.getValue()).intValue(); }
 
-    /** 讓機器人去那一幀。在背景送(送一幀約 40 毫秒,不要卡住畫面) */
+    /** 去那一幀:一定先在 3D 模擬裡顯示;機器人有連線(而且有金鑰)才再送給真機。送一幀約 40 毫秒,在背景送 */
     static void go(final String name, final int f) {
         String why = problem(f);
         if (why != null) { setText(why); return; }
-        if (!confirmOnce()) return;
+        SequenceTab.beginFrame(f);                      // 3D 模擬馬上開始走到那一幀(時間 = 那一幀的速度欄)
+        String noSend = sendProblem();
+        if (noSend != null) { setText(name + "(幀 " + f + "):" + noSend); return; }
+        if (!confirmOnce()) { setText(name + "(幀 " + f + "):只在模擬裡顯示,沒有送給真機。"); return; }
         setText("送出 " + name + "(幀 " + f + ")…");
         new Thread(new Runnable() {
             public void run() {
