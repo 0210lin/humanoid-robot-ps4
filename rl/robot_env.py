@@ -146,14 +146,21 @@ class WalkEnv(StandEnv):
     獎勵 = 前進速度接近目標 + 該抬的腳有抬起來(右腳 / 左腳輪流)+ 站直 + 動作平順。"""
     PERIOD = 20            # 20 步 × 40 ms = 0.8 秒一個完整步伐
     V_TARGET = 0.12        # 目標前進速度 m/s
-    CLEAR = 0.015          # 目標抬腳高度 15 mm
+    CLEAR = 0.010          # 規則:抬起的腳要完全離地至少 1 公分(量的是整塊腳底的最低點)
 
     def __init__(self, randomize=True, push=False, **kw):
         super().__init__(randomize=randomize, push=push, **kw)
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, (15 * 3 + 3 + 3 + 2,), np.float32)
         names = {mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, g): g for g in range(self.model.ngeom)}
         self.foot_r, self.foot_l = names["foot_b15"], names["foot_b23"]     # b15 = 右腳掌,b23 = 左腳掌
+        self.floor_y = float(self.model.geom_pos[names["floor"]][1])
         self.act_scale = 0.5
+
+    def foot_clear(self, g):
+        """這隻腳的碰撞方塊最低點離地板多高(公尺);0 = 貼地,規則要求抬腳時 >= 0.010"""
+        R = self.data.geom_xmat[g].reshape(3, 3)
+        low = self.data.geom_xpos[g][1] - float(np.sum(np.abs(R[1, :]) * self.model.geom_size[g]))
+        return low - self.floor_y
 
     def _obs(self):
         ph = 2 * np.pi * (self.t % self.PERIOD) / self.PERIOD
@@ -192,19 +199,22 @@ class WalkEnv(StandEnv):
         vside = d.qvel[0]
         fwd = -d.xmat[1].reshape(3, 3)[:, 2]                   # 骨盆的正面方向(世界座標);沒轉向時 = (0, 0, -1)
         heading = float(-fwd[2] / max(1e-6, np.hypot(fwd[0], fwd[2])))   # 正面和正前方夾角的 cos,1 = 沒偏
+        hf = float(np.clip((heading - 0.5) / 0.5, 0.0, 1.0))    # 方向因子:正前方 = 1,偏 60 度以上 = 0(只會少拿獎勵,不扣分,不然 AI 會學到早點倒下)
         phase = (self.t % self.PERIOD) / self.PERIOD
-        lift_r = np.clip(d.geom_xpos[self.foot_r][1] - self.foot_y0[0], 0, self.CLEAR) / self.CLEAR
-        lift_l = np.clip(d.geom_xpos[self.foot_l][1] - self.foot_y0[1], 0, self.CLEAR) / self.CLEAR
+        clr_r = self.foot_clear(self.foot_r)
+        clr_l = self.foot_clear(self.foot_l)
+        lift_r = float(np.clip(clr_r / self.CLEAR, 0.0, 1.0))      # 抬到 1 公分 = 1(滿分),沒離地 = 0
+        lift_l = float(np.clip(clr_l / self.CLEAR, 0.0, 1.0))
         swing, stance = (lift_r, lift_l) if phase < 0.5 else (lift_l, lift_r)    # 前半拍抬右腳,後半拍抬左腳
-        r = (2.0 * np.exp(-((vfwd - self.V_TARGET) / 0.08) ** 2)
+        r = (3.0 * hf * float(np.clip(vfwd / self.V_TARGET, -0.5, 1.2))
              + 1.0 * swing - 1.0 * stance
              + 0.5 + 2.0 * (up - 1.0) + 5.0 * h
-             - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 1.0 * abs(vside) + 4.0 * (heading - 1.0))
+             - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 1.0 * abs(vside) + 1.0 * hf)
         fell = up < 0.7 or h < -0.04
         self.prev_act = action.astype(np.float64)
         if fell:
             r -= 5.0
-        return self._obs(), float(r), bool(fell), self.t >= MAX_STEPS, {}
+        return self._obs(), float(r), bool(fell), self.t >= MAX_STEPS, {"clr_r": clr_r, "clr_l": clr_l}
 
 
 def make_env(name, **kw):

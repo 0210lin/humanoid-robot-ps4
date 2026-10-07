@@ -62,7 +62,7 @@ public class RobotTab {
     static JList<Viewport3D.Part> partList;
     static JTextField filter;
     static JComboBox<String> assignBox;
-    static JCheckBox hideAssigned, onlySelected, colorBox;
+    static JCheckBox hideAssigned, onlySelected, colorBox, floorBox;
     static boolean syncingList = false;
 
     // 關節
@@ -226,6 +226,7 @@ public class RobotTab {
             p.visible = v;
         }
         vp.colorByOwner = colorBox == null || colorBox.isSelected();
+        vp.showFloor = floorBox == null || floorBox.isSelected();
         vp.repaint();
     }
 
@@ -557,6 +558,7 @@ public class RobotTab {
         hideAssigned = new JCheckBox("隱藏已指定的零件");
         onlySelected = new JCheckBox("只顯示選中的");
         colorBox = new JCheckBox("依歸屬上色(彩色)", false);
+        floorBox = new JCheckBox("顯示地板(量腳底板有沒有踩平)", true);
         JPanel top2 = new JPanel(new BorderLayout(4, 4));
         top2.add(new JLabel("搜尋零件:"), BorderLayout.WEST);
         top2.add(filter, BorderLayout.CENTER);
@@ -568,6 +570,7 @@ public class RobotTab {
         full(bot2, 4, hideAssigned);
         full(bot2, 5, onlySelected);
         full(bot2, 6, colorBox);
+        full(bot2, 7, floorBox);
         p2.add(top2, BorderLayout.NORTH);
         p2.add(new JScrollPane(partList), BorderLayout.CENTER);
         p2.add(bot2, BorderLayout.SOUTH);
@@ -701,6 +704,7 @@ public class RobotTab {
         hideAssigned.addActionListener(vis);
         onlySelected.addActionListener(vis);
         colorBox.addActionListener(vis);
+        floorBox.addActionListener(vis);
         motorBox.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { if (!updatingFields) { loadFields(); lastPose = null; } } });
         parentBox.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { storeFields(); } });
         revBox.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { storeFields(); } });

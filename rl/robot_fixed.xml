@@ -190,7 +190,7 @@
                   <inertial pos="-0.0118499 -0.0997689 0.0584808" mass="0.05913396" fullinertia="2.746246e-05 3.058291e-05 1.598476e-05 5.069470e-07 1.998527e-07 -2.423420e-06"/>
                   <geom type="mesh" mesh="m13" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
                   <geom type="mesh" mesh="m35" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
-                  <geom name="foot_b15" type="box" pos="-0.0088277 -0.107506 0.0514909" size="0.03 0.00525 0.05" group="0" contype="1" conaffinity="1" friction="1 0.005 0.0001" rgba="0.2 0.8 0.3 0.3"/>
+                  <geom name="foot_b15" type="box" pos="-0.0088277 -0.107506 0.0514909" size="0.03 0.00525 0.05" group="0" contype="1" conaffinity="1" friction="1 0.005 0.0001" rgba="0.2 0.8 0.3 0"/>
                 </body>
               </body>
             </body>
@@ -244,7 +244,7 @@
                   <inertial pos="-0.123842 -0.100044 0.0585216" mass="0.05981897" fullinertia="2.753587e-05 3.073308e-05 1.593769e-05 -5.193286e-07 -1.931548e-07 -2.236367e-06"/>
                   <geom type="mesh" mesh="m03" group="1" contype="0" conaffinity="0" rgba="0.75 0.4 0.55 1"/>
                   <geom type="mesh" mesh="m36" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
-                  <geom name="foot_b23" type="box" pos="-0.126832 -0.107506 0.0514909" size="0.03 0.00525 0.05" group="0" contype="1" conaffinity="1" friction="1 0.005 0.0001" rgba="0.2 0.8 0.3 0.3"/>
+                  <geom name="foot_b23" type="box" pos="-0.126832 -0.107506 0.0514909" size="0.03 0.00525 0.05" group="0" contype="1" conaffinity="1" friction="1 0.005 0.0001" rgba="0.2 0.8 0.3 0"/>
                   <geom type="mesh" mesh="m65" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                   <geom type="mesh" mesh="m66" group="1" contype="0" conaffinity="0" rgba="0.55 0.6 0.68 1"/>
                 </body>

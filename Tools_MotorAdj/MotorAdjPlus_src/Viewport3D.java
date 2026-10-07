@@ -40,6 +40,13 @@ public class Viewport3D extends JPanel {
     final List<Part> parts = new ArrayList<Part>();
     double[][] mats;                      // 每顆馬達的零件群變換(index = owner)
     boolean colorByOwner = true;
+    boolean showFloor = false;                                 // 畫地板,並量腳底板有沒有踩平
+    final List<String> floorLines = new ArrayList<String>();   // 畫面上要寫的結果(每隻腳一行)
+    final List<Integer> floorLineColors = new ArrayList<Integer>();
+    final java.util.Map<Part, Integer> footColor = new java.util.HashMap<Part, Integer>();
+    double floorLevel = 0;
+    double[] floorCenter = {0, 0, 0};
+    boolean floorValid = false;
     String up = "Y";
     boolean pickPointMode = false;
     interface LabelFunc { String label(Part p); }
@@ -167,6 +174,7 @@ public class Viewport3D extends JPanel {
 
     int baseColor(Part p) {
         if (p.name != null && p.name.contains("舵機")) return SERVO_COLOR;      // 伺服馬達固定粉紅色
+        if (showFloor) { Integer fc = footColor.get(p); if (fc != null) return fc.intValue(); }   // 腳底板:綠 = 踩平,紅 = 翹起,藍 = 平的但離地
         if (!colorByOwner || p.owner == 0) return PLATE_COLOR;                   // 其他零件同一個灰色
         return palette[p.owner % palette.length];
     }
@@ -193,6 +201,7 @@ public class Viewport3D extends JPanel {
         double ll = Math.sqrt(lx * lx + ly * ly + lz * lz);
         lx /= ll; ly /= ll; lz /= ll;
 
+        if (showFloor) drawFloor(); else { footColor.clear(); floorLines.clear(); floorValid = false; }
         for (int pi = 0; pi < parts.size(); pi++) {
             Part p = parts.get(pi);
             if (!p.visible) continue;
@@ -300,8 +309,139 @@ public class Viewport3D extends JPanel {
                 }
             }
         }
+        if (showFloor && !floorLines.isEmpty()) {
+            g2.setFont(new java.awt.Font("Dialog", java.awt.Font.BOLD, iw < 520 ? 11 : 14));
+            java.awt.FontMetrics fm = g2.getFontMetrics();
+            int y = 6;
+            for (int i = 0; i < floorLines.size(); i++) {
+                String t = floorLines.get(i);
+                int chipW = fm.stringWidth(t) + 10, chipH = fm.getHeight() + 2;
+                g2.setColor(new Color(0, 0, 0, 170));
+                g2.fillRoundRect(6, y, chipW, chipH, 8, 8);
+                g2.setColor(new Color(floorLineColors.get(i).intValue()));
+                g2.drawString(t, 11, y + fm.getAscent() + 1);
+                y += chipH + 3;
+            }
+        }
         g2.dispose();
         lastFrameMs = (System.nanoTime() - t0) / 1e6;
+    }
+
+
+    // ---------- 地板:量腳底板有沒有踩平 ----------
+
+    double[] matOf(Part p) {
+        return (mats != null && p.owner >= 0 && p.owner < mats.length && mats[p.owner] != null) ? mats[p.owner] : Rig.identity();
+    }
+
+    /** 量每隻腳底板(名稱含「腳底板」):最低點、傾斜角。地板高度 = 兩隻腳裡最低的那一點 */
+    void computeFloor() {
+        footColor.clear();
+        floorLines.clear();
+        floorLineColors.clear();
+        floorValid = false;
+        int u = "Z".equals(up) ? 2 : 1;
+        List<Part> feet = new ArrayList<Part>();
+        for (Part p : parts) if (p.name != null && p.name.contains("腳底板") && p.mesh != null && p.mesh.n > 0) feet.add(p);
+        int nf = feet.size();
+        if (nf == 0) return;
+        double[] low = new double[nf], tilt = new double[nf];
+        double[][] ctr = new double[nf][3];
+        double floor = Double.MAX_VALUE;
+        for (int i = 0; i < nf; i++) {
+            Part p = feet.get(i);
+            double[] M = matOf(p);
+            float[] t = p.mesh.tri;
+            double mn = Double.MAX_VALUE;
+            for (int k = 0; k < p.mesh.n * 3; k++) {
+                double x = t[k * 3], y = t[k * 3 + 1], z = t[k * 3 + 2];
+                double w = M[u * 4] * x + M[u * 4 + 1] * y + M[u * 4 + 2] * z + M[u * 4 + 3];
+                if (w < mn) mn = w;
+            }
+            low[i] = mn;
+            double[] c0 = {(p.mesh.min[0] + p.mesh.max[0]) / 2.0, (p.mesh.min[1] + p.mesh.max[1]) / 2.0, (p.mesh.min[2] + p.mesh.max[2]) / 2.0};
+            for (int r = 0; r < 3; r++) ctr[i][r] = M[r * 4] * c0[0] + M[r * 4 + 1] * c0[1] + M[r * 4 + 2] * c0[2] + M[r * 4 + 3];
+            double cosT = M[u * 4 + u];                  // 板子原本朝上的軸轉完之後,還剩多少朝上
+            tilt[i] = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, cosT))));
+            floor = Math.min(floor, mn);
+        }
+        floorLevel = floor;
+        for (int r = 0; r < 3; r++) { double sum = 0; for (int i = 0; i < nf; i++) sum += ctr[i][r]; floorCenter[r] = sum / nf; }
+        floorValid = true;
+        // 右腳在 +X 側(面向正面時),左腳在 -X 側
+        Integer[] order = new Integer[nf];
+        for (int i = 0; i < nf; i++) order[i] = Integer.valueOf(i);
+        final double[][] cc = ctr;
+        java.util.Arrays.sort(order, new java.util.Comparator<Integer>() {
+            public int compare(Integer a, Integer b) { return Double.compare(cc[b.intValue()][0], cc[a.intValue()][0]); }
+        });
+        String[] nm = nf == 2 ? new String[] {"右腳", "左腳"} : null;
+        for (int j = 0; j < nf; j++) {
+            int i = order[j].intValue();
+            double clr = low[i] - floor;
+            String label = nm != null ? nm[j] : "腳" + (j + 1);
+            String txt;
+            int col;
+            if (tilt[i] > 1.5) {
+                txt = label + ":翹起 " + Math.round(tilt[i]) + "°" + (clr > 1.0 ? "(最低點離地 " + Math.round(clr) + " mm)" : "");
+                col = 0xff5a4f;
+            } else if (clr > 1.0) {
+                txt = label + ":平的,但離地 " + Math.round(clr) + " mm";
+                col = 0x4aa3ff;
+            } else {
+                txt = label + ":踩平";
+                col = 0x3fb950;
+            }
+            feetColorPut(feet.get(i), col);
+            floorLines.add(txt);
+            floorLineColors.add(Integer.valueOf(col));
+        }
+        if (nf == 2) {
+            double dh = Math.abs(low[0] - low[1]);
+            if (dh > 1.0) { floorLines.add("兩腳高度差 " + Math.round(dh) + " mm"); floorLineColors.add(Integer.valueOf(0xe6e6e6)); }
+        }
+    }
+
+    void feetColorPut(Part p, int col) { footColor.put(p, Integer.valueOf(col)); }
+
+    /** 畫地板(網格),在零件之前畫,零件會蓋在上面 */
+    void drawFloor() {
+        computeFloor();
+        if (!floorValid) return;
+        int u = "Z".equals(up) ? 2 : 1;
+        int a = 0, b = u == 1 ? 2 : 1;
+        double h = 260, step = 20;
+        double ca = floorCenter[a], cb = floorCenter[b];
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        double[][] q = new double[4][];
+        double[][] corner = {{-h, -h}, {h, -h}, {h, h}, {-h, h}};
+        boolean ok = true;
+        for (int i = 0; i < 4; i++) {
+            double[] w = new double[3];
+            w[a] = ca + corner[i][0]; w[b] = cb + corner[i][1]; w[u] = floorLevel;
+            q[i] = project(w);
+            if (q[i] == null) ok = false;
+        }
+        if (ok) {
+            java.awt.Polygon poly = new java.awt.Polygon();
+            for (int i = 0; i < 4; i++) poly.addPoint((int) q[i][0], (int) q[i][1]);
+            g.setColor(new Color(44, 60, 78));
+            g.fillPolygon(poly);
+        }
+        g.setColor(new Color(92, 122, 150));
+        g.setStroke(new java.awt.BasicStroke(1f));
+        for (double d = -h; d <= h + 0.1; d += step) {
+            double[] p1 = new double[3], p2 = new double[3], p3 = new double[3], p4 = new double[3];
+            p1[a] = ca + d; p1[b] = cb - h; p1[u] = floorLevel;
+            p2[a] = ca + d; p2[b] = cb + h; p2[u] = floorLevel;
+            p3[a] = ca - h; p3[b] = cb + d; p3[u] = floorLevel;
+            p4[a] = ca + h; p4[b] = cb + d; p4[u] = floorLevel;
+            double[] s1 = project(p1), s2 = project(p2), s3 = project(p3), s4 = project(p4);
+            if (s1 != null && s2 != null) g.drawLine((int) s1[0], (int) s1[1], (int) s2[0], (int) s2[1]);
+            if (s3 != null && s4 != null) g.drawLine((int) s3[0], (int) s3[1], (int) s4[0], (int) s4[1]);
+        }
+        g.dispose();
     }
 
     static int blend(int a, int b, double t) {

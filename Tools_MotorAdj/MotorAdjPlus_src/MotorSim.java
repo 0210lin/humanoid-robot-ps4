@@ -104,6 +104,7 @@ public class MotorSim {
         }
         vp.up = RobotTab.vp.up;
         vp.colorByOwner = false;
+        vp.showFloor = true;
         if (!fitted && vp.getWidth() > 0) {
             vp.fitToModel();
             vp.dist *= 0.8;

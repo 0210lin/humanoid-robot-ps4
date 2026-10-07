@@ -245,7 +245,7 @@ def emit_body(b, ind, out, fixed_root=False):
         if "腳底板" in p["name"]:
             c = (p["bmin"] + p["bmax"]) / 2
             h = (p["bmax"] - p["bmin"]) / 2
-            out.append('%s  <geom name="foot_%s" type="box" pos="%s" size="%s" group="0" contype="1" conaffinity="1" friction="%g 0.005 0.0001" rgba="0.2 0.8 0.3 0.3"/>' % (pad, b.name, f(c), f(h), params["foot_friction"]))
+            out.append('%s  <geom name="foot_%s" type="box" pos="%s" size="%s" group="0" contype="1" conaffinity="1" friction="%g 0.005 0.0001" rgba="0.2 0.8 0.3 0"/>' % (pad, b.name, f(c), f(h), params["foot_friction"]))
     for c in b.children:
         emit_body(c, ind + 1, out, fixed_root)
     out.append("%s</body>" % pad)

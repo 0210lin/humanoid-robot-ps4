@@ -57,6 +57,7 @@ public class SimView {
         }
         vp.up = RobotTab.vp.up;
         vp.colorByOwner = false;
+        vp.showFloor = true;
         if (!fitted) {
             vp.fitToModel();
             vp.dist *= 0.7;
