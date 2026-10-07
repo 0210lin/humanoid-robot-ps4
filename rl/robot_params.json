@@ -1,0 +1,29 @@
+{
+  "_說明": "機器人物理模型的可調參數。重量、伺服力矩這些先用估計值,量到實際數字後改這裡,再執行 build_mjcf.py 重新產生 robot.xml。",
+  "total_mass_kg": 1.18,
+  "_total_mass_kg": "整台機器人實際重量(公斤,含電池)。填了之後,所有零件的質量會等比例縮放到這個總重。null = 不縮放,用下面的估計值。",
+  "density_kg_m3": 1200,
+  "_density": "一般零件(板子、支架)的密度估計:壓克力約 1200,鋁約 2700,3D 列印約 1100。",
+  "servo_mass_kg": 0.040,
+  "_servo_mass": "每顆伺服馬達的質量估計(公斤)。零件名稱包含 servo_key 的都算伺服。",
+  "servo_key": "舵機",
+  "battery_kg": 0.045,
+  "_battery": "電池本體的重量(公斤)。STL 只有電池盒外殼,電池本體當作一個固定質量放在電池盒的外框中心。實測 45 g。",
+  "battery_part": "電池盒-1",
+  "extra_electronics_kg": 0.0,
+  "_extra": "電池、控制板、電線等 STL 沒有的重量,加在身體(骨盆)上。",
+  "servo": {
+    "kp": 30.0,
+    "kv": 0.6,
+    "max_torque_nm": 2.0,
+    "joint_damping": 0.02,
+    "joint_armature": 0.005,
+    "joint_frictionloss": 0.02,
+    "range_deg": 150
+  },
+  "passive": {
+    "damping": 0.01,
+    "armature": 0.0005
+  },
+  "foot_friction": 1.0
+}
