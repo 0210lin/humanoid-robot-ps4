@@ -85,6 +85,8 @@
     <mesh name="m79" file="m79.stl" scale="0.001 0.001 0.001"/>
     <mesh name="m80" file="m80.stl" scale="0.001 0.001 0.001"/>
     <mesh name="m81" file="m81.stl" scale="0.001 0.001 0.001"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.20 0.23 0.27" rgb2="0.27 0.31 0.36" width="300" height="300" mark="edge" markrgb="0.45 0.52 0.60"/>
+    <material name="floor_grid" texture="grid" texuniform="true" texrepeat="5 5" reflectance="0.05"/>
   </asset>
   <worldbody>
     <body name="pelvis" pos="0 0 0">

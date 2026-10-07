@@ -268,10 +268,12 @@ def build_xml(fixed):
         if p["mesh"] is None:
             continue
         out.append('    <mesh name="%s" file="%s.stl" scale="0.001 0.001 0.001"/>' % (p["mesh"], p["mesh"]))
+    out.append('    <texture name="grid" type="2d" builtin="checker" rgb1="0.20 0.23 0.27" rgb2="0.27 0.31 0.36" width="300" height="300" mark="edge" markrgb="0.45 0.52 0.60"/>')
+    out.append('    <material name="floor_grid" texture="grid" texuniform="true" texrepeat="5 5" reflectance="0.05"/>')
     out.append("  </asset>")
     out.append("  <worldbody>")
     if not fixed:
-        out.append('    <geom name="floor" type="plane" pos="0 %.5f 0" zaxis="0 1 0" size="3 3 0.1" contype="1" conaffinity="1" friction="%g 0.005 0.0001" rgba="0.25 0.28 0.32 1"/>' % (foot_min_y, params["foot_friction"]))
+        out.append('    <geom name="floor" type="plane" pos="0 %.5f 0" zaxis="0 1 0" size="3 3 0.1" contype="1" conaffinity="1" friction="%g 0.005 0.0001" material="floor_grid"/>' % (foot_min_y, params["foot_friction"]))
         out.append('    <light pos="0 1 1" dir="0 -1 -1" diffuse="0.8 0.8 0.8"/>')
     emit_body(pelvis, 2, out, fixed_root=fixed)
     out.append("  </worldbody>")
