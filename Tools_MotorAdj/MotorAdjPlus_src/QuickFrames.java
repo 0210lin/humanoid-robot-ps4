@@ -1,5 +1,11 @@
+import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
+import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -7,35 +13,41 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JTabbedPane;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 
 /**
- * 「馬達參數」分頁右上角的「快速測試動作」:
- *   強制讓機器人去某一幀(兩個格子 A、B,想去哪個按哪個),但不碰你正在編輯的那一幀
- *   (畫面上的數值、捲軸、「寫入」的內容都不變),可以來回按來測穩定性。
+ * 「快速測試動作」:強制讓機器人去某一幀(兩個格子 A、B,想去哪個按哪個),但不碰你正在編輯的那一幀
+ * (畫面上的數值、捲軸、「寫入」的內容都不變),可以來回按來測穩定性。
+ * 每個分頁都有一份:A / B 的幀號和下面那行提示在所有分頁共用(在一個分頁改了,別的分頁也跟著變)。
  * 送的是 MotorAdj 目前載入的幀資料(「寫入」過的),不是畫面上還沒寫入的修改。
  * 送出的方式和「動作程式」分頁的模擬一樣(SequenceTab.sendFrame:暫借工作區、送完還原)。
  */
 public class QuickFrames {
+    // 所有分頁共用
+    static final SpinnerNumberModel modelA = new SpinnerNumberModel(0, 0, 999, 1);
+    static final SpinnerNumberModel modelB = new SpinnerNumberModel(1, 0, 999, 1);
+    static final List<JLabel> statusLabels = new ArrayList<JLabel>();
+    static String statusText = "先到「設定」連線、按「開啟馬達」。";
+    static boolean warned = false;
+
+    // 舊程式(測試)用的:第一份(馬達參數分頁)的元件
     static JSpinner spA, spB;
     static JButton sendA, sendB;
     static JLabel status;
-    static boolean warned = false;
 
     interface Sender { long send(int f) throws Exception; }
     /** 真正送出的動作(測試時可以換掉) */
     static Sender sender = new Sender() { public long send(int f) throws Exception { return SequenceTab.sendFrame(f); } };
 
-    static JLabel label(String t, int x, int y, int w, int h, JPanel p) {
-        JLabel l = new JLabel(t);
-        l.setBounds(x, y, w, h);
-        p.add(l);
-        return l;
+    static void setText(String s) {
+        statusText = s;
+        for (JLabel l : statusLabels) l.setText(s);
     }
 
     static void setStatus(final String s) {
-        SwingUtilities.invokeLater(new Runnable() { public void run() { status.setText(s); } });
+        SwingUtilities.invokeLater(new Runnable() { public void run() { setText(s); } });
     }
 
     /** 送前檢查:有連線、幀存在、沒有別的在播。回傳 null 表示可以送,否則是要顯示的原因 */
@@ -60,14 +72,14 @@ public class QuickFrames {
         return true;
     }
 
-    static int val(JSpinner s) { return ((Number) s.getValue()).intValue(); }
+    static int val(SpinnerNumberModel m) { return ((Number) m.getValue()).intValue(); }
 
     /** 讓機器人去那一幀。在背景送(送一幀約 40 毫秒,不要卡住畫面) */
     static void go(final String name, final int f) {
         String why = problem(f);
-        if (why != null) { status.setText(why); return; }
+        if (why != null) { setText(why); return; }
         if (!confirmOnce()) return;
-        status.setText("送出 " + name + "(幀 " + f + ")…");
+        setText("送出 " + name + "(幀 " + f + ")…");
         new Thread(new Runnable() {
             public void run() {
                 try {
@@ -81,7 +93,30 @@ public class QuickFrames {
         }, "QuickFrames-go").start();
     }
 
-    /** panel:「馬達參數」分頁(固定座標)。放在右上角的空白處 */
+    static JLabel label(String t, int x, int y, int w, int h, JPanel p) {
+        JLabel l = new JLabel(t);
+        l.setBounds(x, y, w, h);
+        p.add(l);
+        return l;
+    }
+
+    static JLabel newStatus() {
+        JLabel l = new JLabel(statusText);
+        l.setFont(l.getFont().deriveFont(Font.PLAIN, 11f));
+        statusLabels.add(l);
+        return l;
+    }
+
+    static java.awt.event.ActionListener goA() {
+        return new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { go("A", val(modelA)); } };
+    }
+
+    static java.awt.event.ActionListener goB() {
+        return new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { go("B", val(modelB)); } };
+    }
+
+    // ---------- 大的(馬達參數分頁右上角,固定座標) ----------
+
     static void install(Container panel) {
         final JPanel p = new JPanel(null);
         p.setBorder(BorderFactory.createTitledBorder("快速測試動作(不會改到正在編輯的)"));
@@ -89,12 +124,11 @@ public class QuickFrames {
         p.setOpaque(false);
         p.setToolTipText("讓機器人直接去某一幀,但不碰你正在編輯的畫面;兩個格子來回按,測穩定性。送的是已「寫入」的資料。");
 
-        spA = new JSpinner(new SpinnerNumberModel(0, 0, 999, 1));
-        spB = new JSpinner(new SpinnerNumberModel(1, 0, 999, 1));
+        spA = new JSpinner(modelA);
+        spB = new JSpinner(modelB);
         sendA = new JButton("去這一幀");
         sendB = new JButton("去這一幀");
-        status = new JLabel("先到「設定」連線、按「開啟馬達」。");
-        status.setFont(status.getFont().deriveFont(Font.PLAIN, 11f));
+        status = newStatus();
 
         label("A 幀:", 10, 18, 40, 24, p);
         spA.setBounds(52, 18, 70, 24);
@@ -109,8 +143,123 @@ public class QuickFrames {
         status.setBounds(10, 74, 312, 24);
         p.add(status);
 
-        sendA.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { go("A", val(spA)); } });
-        sendB.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent e) { go("B", val(spB)); } });
+        sendA.addActionListener(goA());
+        sendB.addActionListener(goB());
         panel.add(p);
+    }
+
+    // ---------- 其他分頁 ----------
+
+    /** 固定座標分頁用的小方塊(380 x 66) */
+    static JPanel buildSmallBlock() {
+        JPanel p = new JPanel(null);
+        p.setBorder(BorderFactory.createTitledBorder("快速到幀(不改到正在編輯的)"));
+        p.setOpaque(false);
+        p.setSize(380, 66);
+        p.setToolTipText("讓機器人直接去某一幀,不碰你正在編輯的畫面。送的是已「寫入」的資料。");
+        JSpinner a = new JSpinner(modelA), b = new JSpinner(modelB);
+        JButton ga = new JButton("去"), gb = new JButton("去");
+        label("A:", 8, 16, 20, 22, p);
+        a.setBounds(28, 16, 60, 22);
+        p.add(a);
+        ga.setBounds(92, 16, 52, 22);
+        p.add(ga);
+        label("B:", 160, 16, 20, 22, p);
+        b.setBounds(180, 16, 60, 22);
+        p.add(b);
+        gb.setBounds(244, 16, 52, 22);
+        p.add(gb);
+        JLabel st = newStatus();
+        st.setBounds(8, 40, 364, 20);
+        p.add(st);
+        ga.addActionListener(goA());
+        gb.addActionListener(goB());
+        return p;
+    }
+
+    /** 上下排列版面的分頁用的一整排 */
+    static JPanel buildRow() {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 3));
+        p.setOpaque(false);
+        p.setToolTipText("讓機器人直接去某一幀,不碰你正在編輯的畫面。送的是已「寫入」的資料。");
+        JSpinner a = new JSpinner(modelA), b = new JSpinner(modelB);
+        JButton ga = new JButton("去"), gb = new JButton("去");
+        p.add(new JLabel("快速到幀  A:"));
+        p.add(a);
+        p.add(ga);
+        p.add(new JLabel("B:"));
+        p.add(b);
+        p.add(gb);
+        p.add(newStatus());
+        ga.addActionListener(goA());
+        gb.addActionListener(goB());
+        return p;
+    }
+
+    /** 在固定座標的面板裡,找一塊 w x h 的空地(先找右上角,再往左、往下找)。找不到回傳 null */
+    static Rectangle freeSpot(Container panel, int w, int h, int designW, int designH) {
+        for (int y = 4; y + h <= designH; y += 4) {
+            for (int x = designW - w - 8; x >= 4; x -= 4) {
+                Rectangle r = new Rectangle(x - 4, y - 4, w + 8, h + 8);
+                boolean ok = true;
+                for (Component c : panel.getComponents()) {
+                    if (!c.isVisible()) continue;
+                    if (c.getBounds().width > designW - 40 && c.getBounds().height > designH - 60) continue;     // 整頁大小的背景容器
+                    if (r.intersects(c.getBounds())) { ok = false; break; }
+                }
+                if (ok) return new Rectangle(x, y, w, h);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 把「快速到幀」放進每個分頁(「馬達參數」分頁已經有大的,不再放)。要在所有分頁都建好、Center.install 之前呼叫。
+     */
+    static void installEverywhere() {
+        JTabbedPane tabs = null;
+        for (java.awt.Frame f : java.awt.Frame.getFrames()) {
+            tabs = CodeTab.findTabs(f);
+            if (tabs != null) break;
+        }
+        if (tabs == null) return;
+        for (int i = 0; i < tabs.getTabCount(); i++) {
+            Component c = tabs.getComponentAt(i);
+            if (!(c instanceof JPanel)) continue;
+            JPanel root = (JPanel) c;
+            String title = tabs.getTitleAt(i);
+            try {
+                if (root.getLayout() == null) {
+                    // 固定座標分頁:「馬達參數」已經有大的了
+                    boolean hasBig = false;
+                    for (Component k : root.getComponents()) if (k instanceof JPanel && ((JPanel) k).getBorder() != null && k.getBounds().width == 330 && k.getBounds().height == 104) hasBig = true;
+                    if (hasBig) continue;
+                    JPanel blk = buildSmallBlock();
+                    Rectangle r = freeSpot(root, blk.getWidth(), blk.getHeight(), 1040, 628);
+                    if (r == null) { System.err.println("QuickFrames:「" + title + "」分頁找不到空位,沒有加上快速到幀"); continue; }
+                    blk.setBounds(r);
+                    root.add(blk);
+                    root.repaint();
+                } else if (root.getLayout() instanceof BorderLayout) {
+                    BorderLayout bl = (BorderLayout) root.getLayout();
+                    Component north = bl.getLayoutComponent(BorderLayout.NORTH);
+                    JPanel row = buildRow();
+                    if (north == null) {
+                        root.add(row, BorderLayout.NORTH);
+                    } else if (north instanceof JPanel && ((JPanel) north).getLayout() instanceof FlowLayout) {
+                        ((JPanel) north).add(row);
+                    } else {
+                        root.remove(north);
+                        JPanel wrap = new JPanel(new BorderLayout());
+                        wrap.add(north, BorderLayout.CENTER);
+                        wrap.add(row, BorderLayout.SOUTH);
+                        root.add(wrap, BorderLayout.NORTH);
+                    }
+                    root.revalidate();
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
     }
 }

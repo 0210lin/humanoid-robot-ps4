@@ -267,18 +267,22 @@ void custom_stickFun() {
   // ---------- 按下搖桿(L3 / R3)----------
   switch (pad_getStickButtons()) {
     case PAD_L3:  // 只按 L3(左搖桿按下)
+      SetFrameRun(18, 250);
       do {
-        // SetFrameRun(1, 100);      // 動作 1
-        // SetFrameRun(4, 90);       // 動作 2
+        SetFrameRun(19, 20);
       } while ((pad_getStickButtons() & PAD_L3) && pad_getKey() != PAD_BTN_STOP);
-      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      SetFrameRun(20, 600);
+      SetFrameRun(19, 200);
+      SetFrameRun(1, 250);
       break;
     case PAD_R3:  // 只按 R3(右搖桿按下)
+      SetFrameRun(18, 250);
       do {
-        // SetFrameRun(1, 100);      // 動作 1
-        // SetFrameRun(1, 90);       // 動作 2
+        SetFrameRun(21, 20);
       } while ((pad_getStickButtons() & PAD_R3) && pad_getKey() != PAD_BTN_STOP);
-      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      SetFrameRun(22, 500);
+      SetFrameRun(21, 100);
+      SetFrameRun(1, 250);
       break;
     case PAD_L3 | PAD_R3:  // 兩個一起按
       do {
@@ -296,24 +300,26 @@ void custom_stickFun() {
   // 內層一定要呼叫 custom_stickUpdate(),不然出不來。
   switch (LS_DIR) {
     case DIR_UP:
+      SetFrameRun(1, 50);
       do {
-        // SetFrameRun(1, 100);      // 動作 1
-        // SetFrameRun(1, 90);       // 動作 2
+        SetFrameRun(9, 40);
+        SetFrameRun(8, 45);
         custom_stickUpdate();
       } while (LS_DIR == DIR_UP && pad_getKey() != PAD_BTN_STOP);
-      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      SetFrameRun(1, 100);
       break;
     case DIR_DOWN:
+      SetFrameRun(1, 50);
       do {
-        // SetFrameRun(1, 100);
-        // SetFrameRun(1, 90);
+        SetFrameRun(11, 40);
+        SetFrameRun(10, 45);
         custom_stickUpdate();
       } while (LS_DIR == DIR_DOWN && pad_getKey() != PAD_BTN_STOP);
-      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      SetFrameRun(1, 100);
       break;
     case DIR_LEFT:  // 左搖桿往左。推的途中再加按 L2 或 R2,只會換掉其中一個動作
       do {
-        // SetFrameRun(1, 100);              // 動作 1:單純和組合共用(例如 13)
+        SetFrameRun(15, 90);
         uint16_t k = pad_getKey();
         if (k == PAD_BTN_L2) {  // 往左 + L2:動作 2 換成這個(例如 60)
           comboLog(2);
@@ -323,16 +329,16 @@ void custom_stickFun() {
           // SetFrameRun(1, 90);
         } else {  // 單純往左:動作 2 照舊(例如 12)
           comboLog(1);
-          // SetFrameRun(1, 90);
+          SetFrameRun(16, 60);
         }
         custom_stickUpdate();
       } while (LS_DIR == DIR_LEFT && pad_getKey() != PAD_BTN_STOP);
       comboLog(0);
-      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      SetFrameRun(1, 150);
       break;
     case DIR_RIGHT:  // 左搖桿往右。推的途中再加按 L2 或 R2,只會換掉其中一個動作
       do {
-        // SetFrameRun(1, 100);              // 動作 1:單純和組合共用
+        SetFrameRun(15, 90);
         uint16_t k = pad_getKey();
         if (k == PAD_BTN_L2) {  // 往右 + L2:動作 2 換成這個
           comboLog(5);
@@ -342,12 +348,12 @@ void custom_stickFun() {
           // SetFrameRun(1, 90);
         } else {  // 單純往右:動作 2 照舊
           comboLog(4);
-          // SetFrameRun(1, 90);
+          SetFrameRun(17, 60);
         }
         custom_stickUpdate();
       } while (LS_DIR == DIR_RIGHT && pad_getKey() != PAD_BTN_STOP);
       comboLog(0);
-      // SetFrameRun(1, 150);      // 回站姿(幀 1)
+      SetFrameRun(1, 150);
       break;
     default:  // DIR_CENTER:沒推
       break;
@@ -415,87 +421,72 @@ int16_t custom_gamepadKeyFun_kondo() {
 
       case PAD_BTN_DOWN:
         {  // 後退
-          uint8_t jumpFlag = 0;
-          SetFrameRun(2, 80);
-          SetFrameRun(3, 80);
           do {
-            SetFrameRun(8, 70);
-            SetFrameRun(9, 110);
-            if (pad_getKey() != PAD_BTN_DOWN) {
-              jumpFlag = 1;
-              break;
-            }
-            SetFrameRun(10, 70);
-            SetFrameRun(11, 110);
-          } while (pad_getKey() == PAD_BTN_DOWN);
 
-          if (jumpFlag == 1) {
-            SetFrameRun(11, 20);
-            SetFrameRun(10, 85);
-          } else {
-            SetFrameRun(9, 20);
-            SetFrameRun(8, 85);
-          }
-          SetFrameRun(2, 150);
+          } while (pad_getKey() == PAD_BTN_DOWN);
           SetFrameRun(1, 10);
           break;
         }
 
       case PAD_BTN_RIGHT:  // 右轉
         do {
-          SetFrameRun(14, 90);
-          SetFrameRun(12, 80);
+
         } while (keyHas(PAD_BTN_RIGHT));
-        SetFrameRun(12, 50);
         SetFrameRun(1, 100);
         break;
 
       case PAD_BTN_LEFT:  // 左轉
         do {
-          SetFrameRun(13, 90);
-          SetFrameRun(12, 80);
+
         } while (keyHas(PAD_BTN_LEFT));
-        SetFrameRun(12, 50);
         SetFrameRun(1, 100);
         break;
 
       // ---------- 單鍵動作 ----------
       case PAD_BTN_CROSS:
-        SetFrameRun(35, 100);
+        SetFrameRun(23, 100);
         do {
-          SetFrameRun(36, 20);
+          SetFrameRun(24, 20);
         } while (keyHas(PAD_BTN_CROSS));
         SetFrameRun(1, 150);
         break;
 
-      case PAD_BTN_CIRCLE:
-        SetFrameRun(23, 200);
+      case PAD_BTN_TRIANGLE:
+        SetFrameRun(25, 200);
         do {
-          SetFrameRun(24, 20);
+          SetFrameRun(26, 20);
+        } while (keyHas(PAD_BTN_TRIANGLE));
+        SetFrameRun(1, 150);
+        break;
+
+      case PAD_BTN_CIRCLE:
+        SetFrameRun(35, 75);
+        do {
+          SetFrameRun(36, 20);
         } while (keyHas(PAD_BTN_CIRCLE));
         SetFrameRun(1, 150);
         break;
 
       case PAD_BTN_SQUARE:
-        SetFrameRun(25, 200);
+        SetFrameRun(33, 100);
         do {
-          SetFrameRun(26, 20);
+          SetFrameRun(34, 20);
         } while (keyHas(PAD_BTN_SQUARE));
         SetFrameRun(1, 150);
         break;
 
       case PAD_BTN_R1:
-        SetFrameRun(27, 130);
         do {
-          SetFrameRun(28, 20);
+
         } while (keyHas(PAD_BTN_R1));
         SetFrameRun(1, 150);
         break;
 
       case PAD_BTN_L1:
-        SetFrameRun(29, 130);
+        SetFrameRun(27, 150);
+        SetFrameRun(28, 100);
         do {
-          SetFrameRun(30, 20);
+          SetFrameRun(29, 20);
         } while (keyHas(PAD_BTN_L1));
         SetFrameRun(1, 150);
         break;
@@ -504,19 +495,17 @@ int16_t custom_gamepadKeyFun_kondo() {
       // 「推左搖桿左 / 右的途中再加按 L2 或 R2」的組合動作,寫在 custom_stickFun() 的左搖桿那一段。
       case PAD_BTN_L2:  // L2:轉身(左)
         do {
-          SetFrameRun(15, 100);
-          SetFrameRun(16, 90);
+          SetFrameRun(14, 65);
+          SetFrameRun(12, 40);
         } while (keyHas(PAD_BTN_L2));
-        SetFrameRun(15, 100);
         SetFrameRun(1, 150);
         break;
 
       case PAD_BTN_R2:  // R2:轉身(右)
         do {
-          SetFrameRun(15, 100);
-          SetFrameRun(17, 90);
+          SetFrameRun(13, 65);
+          SetFrameRun(12, 40);
         } while (keyHas(PAD_BTN_R2));
-        SetFrameRun(15, 100);
         SetFrameRun(1, 150);
         break;
 

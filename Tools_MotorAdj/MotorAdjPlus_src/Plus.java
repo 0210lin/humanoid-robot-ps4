@@ -304,6 +304,11 @@ public class Plus {
             t.printStackTrace();
         }
         try {
+            QuickFrames.installEverywhere();   // quick go-to-frame on every tab
+        } catch (Throwable tq2) {
+            tq2.printStackTrace();
+        }
+        try {
             PortWatch.install();   // 串口清單自動更新(之後才插上板子也抓得到)
         } catch (Throwable t) {
             t.printStackTrace();
