@@ -148,9 +148,11 @@ class WalkEnv(StandEnv):
     V_TARGET = 0.12        # 目標前進速度 m/s
     CLEAR = 0.010          # 規則:抬起的腳要完全離地至少 1 公分(量的是整塊腳底的最低點)
 
-    def __init__(self, randomize=True, push=False, mode="fwd", **kw):
+    def __init__(self, randomize=True, push=False, mode="fwd", tight=False, **kw):
         super().__init__(randomize=randomize, push=push, **kw)
         self.mode = mode          # "fwd" 往正面走;"right" 往右橫著走(螃蟹步);"left" 往左橫著走
+        self.tight = tight        # True = 嚴格走直線:正面偏離正前方超過約 20° 或橫向離開起點那條線 25 cm 以上,前進分數就快速變少
+        self.tcos, self.lane = (0.98, 0.15) if tight == 2 else (0.94, 0.25)   # tight=2(straighter):偏離超過約 11° 方向分數歸零、橫向離線 15 cm 以上快速變少
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, (15 * 3 + 3 + 3 + 2,), np.float32)
         names = {mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, g): g for g in range(self.model.ngeom)}
         self.foot_r, self.foot_l = names["foot_b15"], names["foot_b23"]     # b15 = 右腳掌,b23 = 左腳掌
@@ -172,6 +174,7 @@ class WalkEnv(StandEnv):
         super().reset(seed=seed, options=options)
         d = self.data
         self.foot_y0 = (d.geom_xpos[self.foot_r][1], d.geom_xpos[self.foot_l][1])
+        self.x0 = float(d.qpos[0])                         # 這一回合起點的橫向位置(嚴格直線模式用)
         return self._obs(), {}
 
     def step(self, action):
@@ -202,6 +205,10 @@ class WalkEnv(StandEnv):
         fwd = -d.xmat[1].reshape(3, 3)[:, 2]                   # 骨盆的正面方向(世界座標);沒轉向時 = (0, 0, -1)
         heading = float(-fwd[2] / max(1e-6, np.hypot(fwd[0], fwd[2])))   # 正面和正前方夾角的 cos,1 = 沒偏
         hf = float(np.clip((heading - 0.5) / 0.5, 0.0, 1.0))    # 方向因子:正前方 = 1,偏 60 度以上 = 0(只會少拿獎勵,不扣分,不然 AI 會學到早點倒下)
+        gd = 1.0
+        if self.tight:
+            hf = float(np.clip((heading - self.tcos) / (1.0 - self.tcos), 0.0, 1.0))             # cos 20° = 0.94:偏超過 20° 方向分數歸零
+            gd = float(np.exp(-((float(d.qpos[0]) - self.x0) / self.lane) ** 2))   # 橫向離開起點那條線 25 cm 以上,前進分數快速變少
         phase = (self.t % self.PERIOD) / self.PERIOD
         clr_r = self.foot_clear(self.foot_r)
         clr_l = self.foot_clear(self.foot_l)
@@ -227,7 +234,7 @@ class WalkEnv(StandEnv):
                 mujoco.mj_objectVelocity(self.model, self.data, mujoco.mjtObj.mjOBJ_GEOM, g_, self._vtmp, 0)
                 slip = max(slip, float(np.hypot(self._vtmp[3], self._vtmp[5])))
         gs = float(np.exp(-(slip / 0.05) ** 2)) if self.mode == "fwd" else 1.0     # 側移允許滑行,只有往前走才禁止滑
-        r = (3.0 * hf * gate * gs * float(np.clip(min(track / vt, 2.0 - track / vt), -0.5, 1.0))
+        r = (3.0 * hf * gate * gs * gd * float(np.clip(min(track / vt, 2.0 - track / vt), -0.5, 1.0))
              + lift_w * (1.0 * swing - 1.0 * stance)
              + 0.5 + 2.0 * (up - 1.0) + 5.0 * h
              - 0.05 * float(da @ da) - 0.02 * float(np.mean(tau)) - 0.1 * float(np.sum(d.qvel[3:6] ** 2)) - 2.0 * abs(cross) - lift_w * 0.5 * over + 1.0 * hf)
@@ -239,6 +246,10 @@ class WalkEnv(StandEnv):
 
 
 def make_env(name, **kw):
+    if name.startswith("straighter"):
+        return WalkEnv(mode="fwd", tight=2, **kw)
+    if name.startswith("straight"):
+        return WalkEnv(mode="fwd", tight=True, **kw)
     if name.startswith("sidel"):
         return WalkEnv(mode="left", **kw)
     if name.startswith("side"):

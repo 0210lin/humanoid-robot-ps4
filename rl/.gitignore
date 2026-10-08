@@ -5,3 +5,6 @@ MUJOCO_LOG.TXT
 runs/
 runs_*.log
 runs_*.err
+gait_opt_*.log
+gait_opt_*.err
+gait/

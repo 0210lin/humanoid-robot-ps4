@@ -10,8 +10,14 @@ from hud import Progress
 from robot_env import make_env
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-name = next((a for a in sys.argv[1:] if not a.startswith("--")), "stand")
-zero = "--zero" in sys.argv
+_args = sys.argv[1:]
+out_path = None
+if "--out" in _args:                      # --out 檔案路徑:指定 GIF 存到哪裡
+    _i = _args.index("--out")
+    out_path = _args[_i + 1]
+    del _args[_i:_i + 2]
+name = next((a for a in _args if not a.startswith("--")), "stand")
+zero = "--zero" in _args
 pol = None
 if not zero:
     from stable_baselines3 import PPO
@@ -50,6 +56,7 @@ for k in range(250):
         falls += te
         obs, _ = env.reset()
         prog.reset()
-out = os.path.join(HERE, "runs", name, "demo%s.gif" % ("_zero" if zero else ""))
+out = out_path or os.path.join(HERE, "runs", name, "demo%s.gif" % ("_zero" if zero else ""))
+os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
 frames[0].save(out, save_all=True, append_images=frames[1:], duration=80, loop=0)
 print("存好了:", out, "| 這段期間倒了", falls, "次")

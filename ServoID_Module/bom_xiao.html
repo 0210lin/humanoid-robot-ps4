@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<title>ServoID 模組 材料清單</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:22px 26px;background:#fff;color:#1f2328;font-family:'Microsoft JhengHei','Noto Sans TC',system-ui,sans-serif;font-size:15px;width:1200px}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:#57606a;margin-bottom:14px}
+  table{border-collapse:collapse;width:100%}
+  th{background:#1f2328;color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+  td{padding:7px 10px;border-bottom:1px solid #d0d7de;vertical-align:top;line-height:1.45}
+  tr.grp td{background:#eef6ff;color:#0a58ca;font-weight:700;font-size:16px;border-bottom:2px solid #0a58ca;padding:8px 10px}
+  tr.grp.b td{background:#fff8e1;color:#b45309;border-bottom-color:#b45309}
+  tr.grp.c td{background:#fdecec;color:#b42318;border-bottom-color:#b42318}
+  tr.grp.d td{background:#eef7ee;color:#1a7f37;border-bottom-color:#1a7f37}
+  td.n,th.n{text-align:center;white-space:nowrap}
+  td.q{font-weight:700;font-size:17px}
+  .tag{display:inline-block;background:#f0f3f6;border:1px solid #d0d7de;border-radius:6px;padding:0 6px;margin:0 2px;font-size:13px;color:#444}
+  .spec{color:#1f2328}
+  .note{color:#57606a;font-size:13.5px}
+  b.hl{color:#b42318}
+  .foot{margin-top:14px;display:flex;gap:14px}
+  .box{flex:1;border:1px solid #d0d7de;border-radius:10px;padding:10px 14px;background:#f6f8fa;line-height:1.55}
+  .box h3{margin:0 0 4px;font-size:15px}
+</style></head><body>
+<h1>ServoID 模組 材料清單</h1>
+<div class="sub">Seeed XIAO ESP32-C3 麵包板版 ・ 做 1 個的數量 ・ 零件便宜,建議每樣多買 1~2 份備用 ・ 價錢和現貨沒有查</div>
+<table>
+<tr><th style="width:44px" class="n">#</th><th style="width:210px">項目</th><th>規格 / 重點</th><th style="width:150px" class="n">用在</th><th style="width:70px" class="n">做 1 個</th><th style="width:80px" class="n">建議買</th></tr>
+
+<tr class="grp"><td colspan="6">A. 核心</td></tr>
+<tr><td class="n">1</td><td><b>Seeed XIAO ESP32-C3</b></td><td class="spec">主控,內建 WiFi。通常附排針但<b>沒焊</b>,要先焊上排針才能插麵包板</td><td class="n"><span class="tag">主控</span></td><td class="n q">1</td><td class="n q">2</td></tr>
+<tr><td class="n">2</td><td><b>5 V 降壓模組</b></td><td class="spec">輸入要涵蓋 <b>6~16 V</b>(3S 充飽 12.6 V)、輸出 5 V、電流 ≥ 500 mA<br>
+  型號:<b>Pololu D24V10F5</b>(固定 5 V、1 A、18×13 mm,最省事)<br>
+  或 <b>MP1584EN</b>(可調、22×17 mm)/ <b>Mini360</b>(可調、17×11 mm)<br>
+  <span class="note">可調的買到後先單獨通電,用三用電表調到 <b class="hl">5.0 V</b> 再接 XIAO。不要用 7805 / AMS1117(12 V 會很燙)</span></td><td class="n"><span class="tag">降壓</span></td><td class="n q">1</td><td class="n q">2</td></tr>
+
+<tr class="grp b"><td colspan="6">B. 電路零件(直插)</td></tr>
+<tr><td class="n">3</td><td><b>二極體 1N4148</b></td><td class="spec">小訊號二極體</td><td class="n"><span class="tag">D1</span></td><td class="n q">1</td><td class="n q">5</td></tr>
+<tr><td class="n">4</td><td><b>蕭特基二極體 1N5819</b></td><td class="spec">1 A、40 V,DO-41 直插</td><td class="n"><span class="tag">D2</span><span class="tag">D3</span></td><td class="n q">2</td><td class="n q">5</td></tr>
+<tr><td class="n">5</td><td><b>電阻 3.3 kΩ</b></td><td class="spec">1/4 W</td><td class="n"><span class="tag">R1</span></td><td class="n q">1</td><td class="n q">5</td></tr>
+<tr><td class="n">6</td><td><b>電阻 22 kΩ</b></td><td class="spec">1/4 W</td><td class="n"><span class="tag">R2</span><span class="tag">R5</span></td><td class="n q">2</td><td class="n q">5</td></tr>
+<tr><td class="n">7</td><td><b>電阻 47 kΩ</b></td><td class="spec">1/4 W</td><td class="n"><span class="tag">R3</span></td><td class="n q">1</td><td class="n q">5</td></tr>
+<tr><td class="n">8</td><td><b>電阻 100 kΩ</b></td><td class="spec">1/4 W <span class="note">(電阻最省事:買一包 1/4 W 電阻組合包)</span></td><td class="n"><span class="tag">R4</span></td><td class="n q">1</td><td class="n q">5</td></tr>
+
+<tr class="grp c"><td colspan="6">C. 電源與接線</td></tr>
+<tr><td class="n">9</td><td><b>XT60 母頭帶線</b></td><td class="spec">12~16 AWG,10~15 cm</td><td class="n"><span class="tag">接電池</span></td><td class="n q">1</td><td class="n q">2</td></tr>
+<tr><td class="n">10</td><td><b>迷你刀片保險絲</b></td><td class="spec"><b>5 A</b>、快速型、標示 <b>32 V 以上</b>(汽車用 mini blade,橘色)</td><td class="n"><span class="tag">F1</span></td><td class="n q">1</td><td class="n q">5</td></tr>
+<tr><td class="n">11</td><td><b>帶線保險絲座</b></td><td class="spec">迷你刀片款,串在電池 + 線上、越靠近電池越好<br><span class="note">保險絲和座的尺寸要一致(都是「迷你」)</span></td><td class="n"><span class="tag">F1 座</span></td><td class="n q">1</td><td class="n q">1</td></tr>
+<tr><td class="n">12</td><td><b>接線端子</b></td><td class="spec">WAGO 221-413(3 孔)或 3 孔螺絲端子,不用焊<br><span class="note">做電池 + 和 − 兩個分線點</span></td><td class="n"><span class="tag">V+</span><span class="tag">GND</span></td><td class="n q">2</td><td class="n q">2</td></tr>
+<tr><td class="n">13</td><td><b>3 針公排針</b></td><td class="spec">2.54 mm 間距;馬達的 3 針母頭插在上面<br><span class="note">先確認你的馬達接頭是 2.54 mm</span></td><td class="n"><span class="tag">馬達接頭</span></td><td class="n q">1</td><td class="n q">1 排</td></tr>
+<tr><td class="n">14</td><td><b>矽膠線</b></td><td class="spec">20~22 AWG,紅、黑各一色;馬達電源和地線用(不要走麵包板電源軌)</td><td class="n"><span class="tag">粗線</span></td><td class="n q">約 1 m</td><td class="n q">各 1 捲</td></tr>
+<tr><td class="n">15</td><td><b>杜邦線</b></td><td class="spec">公對公;訊號線用</td><td class="n"><span class="tag">訊號</span></td><td class="n q">約 10 條</td><td class="n q">1 包</td></tr>
+
+<tr class="grp d"><td colspan="6">D. 組裝與測試</td></tr>
+<tr><td class="n">16</td><td><b>麵包板</b></td><td class="spec"><b>400 孔</b>(170 孔太小)</td><td class="n"><span class="tag">組裝</span></td><td class="n q">1</td><td class="n q">1</td></tr>
+<tr><td class="n">17</td><td><b>USB-C 傳輸線</b></td><td class="spec">要能<b>傳資料</b>(不是只能充電),燒錄韌體用</td><td class="n"><span class="tag">燒錄</span></td><td class="n q">1</td><td class="n q">1</td></tr>
+<tr><td class="n">18</td><td><b>三用電表</b></td><td class="spec">量降壓輸出(5.0 V)、Sig 空閒電壓(約 4.0~4.2 V)</td><td class="n"><span class="tag">必備</span></td><td class="n q">1</td><td class="n q">1</td></tr>
+<tr><td class="n">19</td><td><b>不要的伺服馬達</b></td><td class="spec">第一次測試用,不要直接用要上機器人的</td><td class="n"><span class="tag">測試</span></td><td class="n q">1</td><td class="n q">1</td></tr>
+<tr><td class="n">20</td><td><b>鋰電池(附 XT60)</b></td><td class="spec">7.4 V 馬達用 <b>2S</b>、12 V 馬達用 <b>3S</b>(電池要和馬達電壓相符)</td><td class="n"><span class="tag">供電</span></td><td class="n q">1</td><td class="n q">依需要</td></tr>
+<tr><td class="n">21</td><td><b>烙鐵、焊錫、剝線鉗、熱縮管</b></td><td class="spec">焊 XIAO 排針、處理線頭</td><td class="n"><span class="tag">工具</span></td><td class="n q">1 組</td><td class="n q">1 組</td></tr>
+</table>
+
+<div class="foot">
+  <div class="box"><h3>買之前先確認</h3>
+    1. 馬達接頭是 <b>2.54 mm 間距的 3 針</b>?<br>
+    2. 降壓模組輸入電壓上限 <b>≥ 16 V</b>?<br>
+    3. 保險絲和保險絲座<b>尺寸一致</b>?</div>
+  <div class="box"><h3>不用買</h3>
+    電平轉換模組、MOSFET、LED<br>(XIAO 板上有 LED;電源開關這版先拿掉)<br><br>
+    <b>電路 / 韌體尚未在實機驗證</b>,第一次通電請照 README 的順序。</div>
+</div>
+</body></html>

@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 740" width="1100" height="740" font-family="'Microsoft JhengHei','Noto Sans TC','PingFang TC',sans-serif">
+  <rect width="1100" height="740" fill="#ffffff"/>
+  <defs>
+    <g id="gnd"><line x1="0" y1="0" x2="0" y2="8" stroke="#57606a" stroke-width="2"/><line x1="-11" y1="8" x2="11" y2="8" stroke="#57606a" stroke-width="2"/><line x1="-7" y1="13" x2="7" y2="13" stroke="#57606a" stroke-width="2"/><line x1="-3" y1="18" x2="3" y2="18" stroke="#57606a" stroke-width="2"/></g>
+  </defs>
+
+  <text x="20" y="30" font-size="21" font-weight="700" fill="#1f2328">ServoID 模組 電路圖(麵包板版,用 Seeed XIAO ESP32-C3)</text>
+
+  <!-- ===== 電池 + 保險絲 ===== -->
+  <rect x="40" y="280" width="80" height="120" rx="6" fill="#f6f8fa" stroke="#333" stroke-width="2"/>
+  <text x="80" y="325" font-size="15" font-weight="700" text-anchor="middle">鋰電池</text>
+  <text x="80" y="346" font-size="13" text-anchor="middle">2S 或 3S</text>
+  <text x="80" y="366" font-size="13" text-anchor="middle">XT60</text>
+  <text x="96" y="276" font-size="16" font-weight="700" fill="#d1242f">+</text>
+  <text x="96" y="418" font-size="18" font-weight="700" fill="#57606a">−</text>
+  <line x1="80" y1="280" x2="80" y2="210" stroke="#d1242f" stroke-width="3"/>
+  <rect x="70" y="170" width="20" height="40" fill="#fff" stroke="#d1242f" stroke-width="2.5"/>
+  <text x="100" y="188" font-size="13" fill="#d1242f" font-weight="700">F1 保險絲</text>
+  <text x="100" y="205" font-size="13" fill="#d1242f">3~5 A</text>
+  <line x1="80" y1="170" x2="80" y2="60" stroke="#d1242f" stroke-width="3"/>
+  <line x1="80" y1="400" x2="80" y2="430" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="80" y="430"/>
+
+  <!-- 電池 + 主幹(紅):到降壓、電池偵測、馬達電源針 -->
+  <line x1="80" y1="60" x2="900" y2="60" stroke="#d1242f" stroke-width="3"/>
+  <circle cx="200" cy="60" r="4.5" fill="#d1242f"/>
+  <circle cx="660" cy="60" r="4.5" fill="#d1242f"/>
+  <text x="300" y="52" font-size="13" fill="#d1242f" font-weight="700">電池 +(7.4 V 或 11.1 V),直接接到馬達的電源針</text>
+
+  <!-- ===== 降壓模組 ===== -->
+  <rect x="220" y="110" width="160" height="180" rx="6" fill="#fff8e1" stroke="#b45309" stroke-width="2"/>
+  <text x="300" y="150" font-size="15" font-weight="700" text-anchor="middle">降壓模組</text>
+  <text x="300" y="172" font-size="13" text-anchor="middle">輸入 6~16 V</text>
+  <text x="300" y="192" font-size="13" text-anchor="middle">輸出 5.0 V</text>
+  <text x="300" y="218" font-size="12" text-anchor="middle" fill="#b45309">先單獨通電,用三用電表</text>
+  <text x="300" y="234" font-size="12" text-anchor="middle" fill="#b45309">調到 5.0 V 再接 XIAO</text>
+  <text x="226" y="135" font-size="11" fill="#555">IN+</text>
+  <text x="226" y="255" font-size="11" fill="#555">IN−</text>
+  <text x="352" y="135" font-size="11" fill="#555">OUT+</text>
+  <text x="344" y="255" font-size="11" fill="#555">OUT−</text>
+  <line x1="200" y1="60" x2="200" y2="140" stroke="#d1242f" stroke-width="3"/>
+  <line x1="200" y1="140" x2="220" y2="140" stroke="#d1242f" stroke-width="3"/>
+  <line x1="220" y1="260" x2="200" y2="260" stroke="#57606a" stroke-width="3"/>
+  <line x1="200" y1="260" x2="200" y2="275" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="200" y="275"/>
+  <line x1="380" y1="260" x2="400" y2="260" stroke="#57606a" stroke-width="3"/>
+  <line x1="400" y1="260" x2="400" y2="275" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="400" y="275"/>
+
+  <!-- 5V(橘) -->
+  <line x1="380" y1="140" x2="480" y2="140" stroke="#d97706" stroke-width="3"/>
+  <circle cx="440" cy="140" r="4.5" fill="#d97706"/>
+  <text x="395" y="132" font-size="13" font-weight="700" fill="#d97706">5 V</text>
+  <line x1="480" y1="140" x2="480" y2="250" stroke="#d97706" stroke-width="3"/>
+  <line x1="480" y1="250" x2="520" y2="250" stroke="#d97706" stroke-width="3"/>
+  <!-- D3 1N5819(橫放,陽極在左) -->
+  <path d="M520,240 L520,260 L540,250 Z" fill="#fff" stroke="#333" stroke-width="2"/>
+  <line x1="540" y1="238" x2="540" y2="262" stroke="#333" stroke-width="3"/>
+  <line x1="540" y1="250" x2="720" y2="250" stroke="#d97706" stroke-width="3"/>
+  <text x="530" y="226" font-size="13" font-weight="700" text-anchor="middle">D3 1N5819</text>
+  <text x="530" y="283" font-size="11" text-anchor="middle" fill="#555">防 USB 倒灌</text>
+
+  <!-- ===== 匯流排訊號電路 ===== -->
+  <!-- D1 1N4148 + R1 3.3k:5V → Sig -->
+  <line x1="440" y1="140" x2="440" y2="300" stroke="#d97706" stroke-width="3"/>
+  <path d="M430,300 L450,300 L440,320 Z" fill="#fff" stroke="#333" stroke-width="2"/>
+  <line x1="428" y1="320" x2="452" y2="320" stroke="#333" stroke-width="3"/>
+  <text x="422" y="314" font-size="13" font-weight="700" text-anchor="end">D1 1N4148</text>
+  <line x1="440" y1="320" x2="440" y2="390" stroke="#0969da" stroke-width="3"/>
+  <rect x="432" y="390" width="16" height="40" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="422" y="415" font-size="13" font-weight="700" text-anchor="end">R1 3.3 kΩ</text>
+  <text x="422" y="432" font-size="11" text-anchor="end" fill="#555">上拉</text>
+  <line x1="440" y1="430" x2="440" y2="560" stroke="#0969da" stroke-width="3"/>
+  <!-- Sig 主線 -->
+  <line x1="440" y1="560" x2="930" y2="560" stroke="#0969da" stroke-width="3"/>
+  <circle cx="520" cy="560" r="4.5" fill="#0969da"/>
+  <circle cx="680" cy="560" r="4.5" fill="#0969da"/>
+  <text x="745" y="550" font-size="13" font-weight="700" fill="#0969da">Sig 匯流排(空閒約 4.1 V)</text>
+
+  <!-- RX:R2 22k + R3 47k 分壓(左邊,走上面那條線到 XIAO G19) -->
+  <line x1="520" y1="560" x2="520" y2="530" stroke="#0969da" stroke-width="3"/>
+  <rect x="512" y="490" width="16" height="40" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="538" y="518" font-size="13" font-weight="700">R2 22kΩ</text>
+  <line x1="520" y1="490" x2="520" y2="310" stroke="#0969da" stroke-width="3"/>
+  <circle cx="520" cy="460" r="4.5" fill="#0969da"/>
+  <line x1="520" y1="460" x2="620" y2="460" stroke="#0969da" stroke-width="3"/>
+  <line x1="620" y1="460" x2="620" y2="468" stroke="#0969da" stroke-width="3"/>
+  <rect x="612" y="468" width="16" height="36" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="604" y="490" font-size="13" font-weight="700" text-anchor="end">R3 47kΩ</text>
+  <line x1="620" y1="504" x2="620" y2="516" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="620" y="516"/>
+  <line x1="520" y1="310" x2="720" y2="310" stroke="#0969da" stroke-width="3"/>
+  <text x="560" y="302" font-size="12" fill="#0969da" font-weight="700">RX(接收,分壓後約 2.8 V)</text>
+
+  <!-- TX:D2 1N5819(陽極在下接 Sig,陰極在上接 XIAO G22) -->
+  <line x1="680" y1="560" x2="680" y2="515" stroke="#0969da" stroke-width="3"/>
+  <path d="M670,515 L690,515 L680,495 Z" fill="#fff" stroke="#333" stroke-width="2"/>
+  <line x1="668" y1="495" x2="692" y2="495" stroke="#333" stroke-width="3"/>
+  <text x="702" y="510" font-size="13" font-weight="700">D2 1N5819</text>
+  <text x="702" y="527" font-size="11" fill="#555">橫線那端接 XIAO</text>
+  <line x1="680" y1="495" x2="680" y2="370" stroke="#0969da" stroke-width="3"/>
+  <line x1="680" y1="370" x2="720" y2="370" stroke="#0969da" stroke-width="3"/>
+  <text x="672" y="362" font-size="12" fill="#0969da" font-weight="700" text-anchor="end">TX(送出)</text>
+
+  <!-- ===== XIAO ===== -->
+  <rect x="720" y="100" width="160" height="380" rx="8" fill="#eef6ff" stroke="#0969da" stroke-width="2"/>
+  <text x="800" y="124" font-size="15" font-weight="700" text-anchor="middle">Seeed XIAO ESP32-C3</text>
+  <circle cx="720" cy="150" r="4" fill="#8250df"/><text x="732" y="154" font-size="13">D1(GPIO3) 電池偵測</text>
+  <circle cx="720" cy="250" r="4" fill="#d97706"/><text x="732" y="254" font-size="13">5V  電源輸入(右排最上)</text>
+  <circle cx="720" cy="310" r="4" fill="#0969da"/><text x="732" y="314" font-size="13">D4(GPIO6) ← 匯流排 RX</text>
+  <circle cx="720" cy="370" r="4" fill="#0969da"/><text x="732" y="374" font-size="13">D5(GPIO7) → 匯流排 TX</text>
+  <circle cx="720" cy="450" r="4" fill="#57606a"/><text x="732" y="454" font-size="13">GND(右排第二)</text>
+  <text x="800" y="472" font-size="11" text-anchor="middle" fill="#555">(對照板子上印的字)</text>
+  <line x1="720" y1="450" x2="706" y2="450" stroke="#57606a" stroke-width="3"/>
+  <line x1="706" y1="450" x2="706" y2="458" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="706" y="458"/>
+
+  <!-- ===== 電池電壓偵測(紫):R4 100k + R5 22k ===== -->
+  <line x1="660" y1="60" x2="660" y2="80" stroke="#d1242f" stroke-width="3"/>
+  <rect x="652" y="80" width="16" height="40" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="643" y="105" font-size="13" font-weight="700" text-anchor="end">R4 100 kΩ</text>
+  <line x1="660" y1="120" x2="660" y2="150" stroke="#8250df" stroke-width="3"/>
+  <circle cx="660" cy="150" r="4.5" fill="#8250df"/>
+  <line x1="660" y1="150" x2="720" y2="150" stroke="#8250df" stroke-width="3"/>
+  <line x1="660" y1="150" x2="660" y2="165" stroke="#8250df" stroke-width="3"/>
+  <rect x="652" y="165" width="16" height="40" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="643" y="190" font-size="13" font-weight="700" text-anchor="end">R5 22 kΩ</text>
+  <line x1="660" y1="205" x2="660" y2="214" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="660" y="214"/>
+  <text x="643" y="125" font-size="11" text-anchor="end" fill="#8250df">電池電壓偵測(分壓)</text>
+
+  <!-- ===== 馬達接頭 ===== -->
+  <rect x="930" y="475" width="140" height="150" rx="8" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="1000" y="498" font-size="14" font-weight="700" text-anchor="middle">馬達 3 針接頭</text>
+  <line x1="900" y1="60" x2="900" y2="530" stroke="#d1242f" stroke-width="3"/>
+  <line x1="900" y1="530" x2="930" y2="530" stroke="#d1242f" stroke-width="3"/>
+  <circle cx="930" cy="530" r="4" fill="#d1242f"/><text x="942" y="535" font-size="13">紅  電源 PWR</text>
+  <circle cx="930" cy="560" r="4" fill="#0969da"/><text x="942" y="565" font-size="13">白  Sig</text>
+  <line x1="930" y1="590" x2="910" y2="590" stroke="#57606a" stroke-width="3"/>
+  <line x1="910" y1="590" x2="910" y2="600" stroke="#57606a" stroke-width="3"/>
+  <use href="#gnd" x="910" y="600"/>
+  <circle cx="930" cy="590" r="4" fill="#57606a"/><text x="942" y="595" font-size="13">黑  Gnd</text>
+
+  <!-- ===== 說明 ===== -->
+  <rect x="20" y="648" width="1060" height="78" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <line x1="36" y1="668" x2="66" y2="668" stroke="#d1242f" stroke-width="3"/><text x="72" y="672" font-size="12">電池 +</text>
+  <line x1="130" y1="668" x2="160" y2="668" stroke="#d97706" stroke-width="3"/><text x="166" y="672" font-size="12">5 V</text>
+  <line x1="205" y1="668" x2="235" y2="668" stroke="#0969da" stroke-width="3"/><text x="241" y="672" font-size="12">匯流排訊號</text>
+  <line x1="320" y1="668" x2="350" y2="668" stroke="#8250df" stroke-width="3"/><text x="356" y="672" font-size="12">電池偵測</text>
+  <use href="#gnd" x="450" y="660"/><text x="468" y="672" font-size="12">GND:所有接地符號都接在一起(電池 −、降壓 GND、XIAO GND、馬達黑針)</text>
+  <text x="36" y="696" font-size="12">二極體:三角形尖端那邊、有橫線的一端 = 陰極(要接對方向)。電池 + 直接接馬達紅針,不經過降壓和二極體。</text>
+  <text x="36" y="714" font-size="12">第一次通電:先不接馬達,降壓調到 5.0 V,再接 XIAO;確認電池電壓正常,才插馬達。數值是起始值,波形要實測。</text>
+</svg>
