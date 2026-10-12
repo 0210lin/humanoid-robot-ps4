@@ -1,0 +1,19 @@
+{
+ "success_pct": 0.0,
+ "fitness": 15.9,
+ "falls": 0,
+ "forward_cm": -1.4,
+ "lateral_cm": -7.4,
+ "yaw_deg": 26.7,
+ "peak_lift_mm": 14.1,
+ "slip_cm_s": 24.2,
+ "episodes": 16,
+ "criteria": 3,
+ "gen": 5220,
+ "skill": "turn_r",
+ "label": "右轉身",
+ "time": "2026-10-11 14:04",
+ "goal": "20 秒往右轉 ≥ 180°、位置偏移 ≤ 25 cm、腳最高 ≤ 60 mm、沒倒",
+ "first_frame": 49,
+ "frames": "49~52"
+}

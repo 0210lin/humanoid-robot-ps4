@@ -1,0 +1,22 @@
+** Drc report for ServoID_D.kicad_pcb **
+** Created on 2026-10-09T21:45:48 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 1 DRC violations **
+[silk_overlap]: Silkscreen clearance
+    Rule: 電路板設定中的 "絲印" 約束; warning
+    @(15.5000 mm, 23.4000 mm): PCB text 'ServoID  2S/3S' on F.Silkscreen
+    @(19.0900 mm, 23.3500 mm): Segment of D3 on F.Silkscreen
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

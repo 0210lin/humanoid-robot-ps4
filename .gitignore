@@ -3,3 +3,18 @@
 *.tmp
 *.hex
 *.elf
+
+# 訓練產生的大檔、記錄、備份(不推上去)
+rl/clips_now/
+rl/skills_backup/
+rl/skills/**/*.gif
+rl/skills_exp/_rescue/
+rl/skills_exp/**/*.old
+rl/STOP*.txt
+rl/*.log
+rl/*.err
+rl/*.out
+__pycache__/
+
+# 廠商的馬達 ID 工具(不推)
+MOTORID_change/

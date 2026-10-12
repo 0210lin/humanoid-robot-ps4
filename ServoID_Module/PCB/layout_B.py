@@ -1,0 +1,45 @@
+# 版本 B:緊湊版(板高 47 mm)。座標單位 mm,原點在板子左上角。
+BOARD_W = 31.0
+BOARD_H = 47.0
+
+LIB = r"C:\Program Files\KiCad\10.0\share\kicad\footprints"
+
+PARTS = [
+    ("U1", "Package_TO_SOT_SMD", "TSOT-23-6", 9.0, 37.9, 0, "AP63205WU-7",
+     {"1": "V5", "2": "VBAT", "3": "VBAT", "4": "GND", "5": "SW", "6": "BST"}),
+    ("C1", "Capacitor_SMD", "C_1206_3216Metric", 4.6, 38.85, 0, "10uF 25V",
+     {"2": "VBAT", "1": "GND"}),
+    ("L1", "Inductor_SMD", "L_Bourns-SRN4018", 15.2, 37.9, 0, "4.7uH",
+     {"1": "SW", "2": "V5"}),
+    ("C2", "Capacitor_SMD", "C_0805_2012Metric", 19.4, 36.95, 90, "22uF",
+     {"1": "V5", "2": "GND"}),
+    ("C4", "Capacitor_SMD", "C_0805_2012Metric", 21.6, 36.95, 90, "22uF",
+     {"1": "V5", "2": "GND"}),
+    ("C3", "Capacitor_SMD", "C_0603_1608Metric", 11.8, 35.8, 90, "100nF",
+     {"2": "BST", "1": "SW"}),
+    ("R3", "Resistor_SMD", "R_0603_1608Metric", 12.4, 26.9, 90, "47k",
+     {"2": "RX", "1": "GND"}),
+    ("R2", "Resistor_SMD", "R_0603_1608Metric", 14.7, 24.9, 0, "22k",
+     {"1": "RX", "2": "SIG"}),
+    ("D2", "Diode_SMD", "D_SMA", 12.8, 30.2, 0, "SS14",
+     {"1": "TX", "2": "SIG"}),
+    ("D3", "Diode_SMD", "D_SMA", 22.6, 25.0, 0, "SS14",
+     {"1": "V5S", "2": "V5"}),
+    ("D1", "Diode_SMD", "D_SOD-123", 20.6, 29.3, 90, "1N4148W",
+     {"1": "PU", "2": "V5S"}),
+    ("R1", "Resistor_SMD", "R_0603_1608Metric", 20.6, 33.4, 90, "3.3k",
+     {"2": "PU", "1": "SIG"}),
+    ("R5", "Resistor_SMD", "R_0603_1608Metric", 28.0, 28.4, 90, "22k",
+     {"2": "GND", "1": "VSENSE"}),
+    ("R4", "Resistor_SMD", "R_0603_1608Metric", 28.0, 32.4, 90, "100k",
+     {"2": "VSENSE", "1": "VBAT"}),
+    ("F1", "Fuse", "Fuse_1206_3216Metric", 13.5, 42.2, 0, "5A",
+     {"1": "BAT_RAW", "2": "VBAT"}),
+]
+
+SUPERMINI = dict(ref="U2", x=15.5, y=0.3, value="ESP32-C3 SuperMini")
+BAT_PADS = [("-", 9.0, 45.0), ("+", 13.5, 45.0)]
+MOTOR_PADS = [("GND", 17.5, 45.0), ("PWR", 20.04, 45.0), ("SIG", 22.58, 45.0)]
+HOLES = [(3.5, 3.5), (27.5, 3.5), (3.5, BOARD_H - 3.5), (27.5, BOARD_H - 3.5)]
+
+from layout_A import CONNECTIONS, GND_PADS  # 連線表和版本 A 相同

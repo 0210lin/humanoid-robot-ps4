@@ -1,0 +1,19 @@
+{
+ "success_pct": 100.0,
+ "fitness": 234.8,
+ "falls": 0,
+ "forward_cm": 4.7,
+ "lateral_cm": -525.2,
+ "yaw_deg": 3.8,
+ "peak_lift_mm": 33.0,
+ "slip_cm_s": 16.0,
+ "episodes": 16,
+ "criteria": 3,
+ "gen": 14220,
+ "skill": "side_l",
+ "label": "左側移",
+ "time": "2026-10-11 14:03",
+ "goal": "20 秒往左橫移 ≥ 100 cm、前後偏離 ≤ 25 cm、轉向 ≤ 10°、腳最高 ≤ 60 mm、沒倒(允許滑行)",
+ "first_frame": 45,
+ "frames": "45~48"
+}

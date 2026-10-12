@@ -51,22 +51,14 @@ label.rad{display:block;padding:8px 0}
 <div class="card">
   <h2>4. 測試</h2>
   <div class="row"><span>馬達 ID:</span><input id="tid" type="number" min="1" max="127" value="1" style="width:5em"></div>
-  <div class="row">
-    <button id="bstat" class="sec">讀狀態</button>
-    <select id="amp"><option value="100">小角度</option><option value="150" selected>中角度</option><option value="250">大角度</option></select>
-    <button id="btest">測試轉動</button>
-    <button id="brel" class="sec">放鬆</button>
-  </div>
-  <div class="row" style="margin-top:6px">
-    <span>微調:</span>
+  <div class="row" style="margin-top:8px">
     <button id="bm100" class="big">−100</button>
     <button id="bp100" class="big">+100</button>
-    <button id="bcenter" class="sec">回中點</button>
-    <button id="bhome" class="sec">回原位</button>
+    <button id="bcenter" class="sec big">1500</button>
   </div>
-  <div class="warn">−100 / +100:每按一次動 100 單位(約 16°),不限次數(位置夾在 800~2200)。「回原位」= 第一次按時的位置,「回中點」= 1500。馬達要空載。</div>
-  <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
-  <b>來回掃(讓潤滑油平均)</b>
+  <div id="testres" class="big" style="margin-top:6px"></div>
+  <div class="warn">−100 / +100 可以一直連按,一路加到極限(800 ~ 2200)。1500 = 回中。馬達要空載。</div>
+  <details style="margin-top:10px"><summary>來回掃(讓潤滑油平均,選用)</summary>
   <div class="row" style="margin-top:6px">
     <span>左端</span><input id="slo" type="number" min="800" max="2200" value="900" style="width:5.5em">
     <span>右端</span><input id="shi" type="number" min="800" max="2200" value="2100" style="width:5.5em">
@@ -80,8 +72,8 @@ label.rad{display:block;padding:8px 0}
     <button id="bsweepstop" class="danger big">停止</button>
   </div>
   <div id="sweepres"></div>
-  <div class="warn">會一直在左端和右端之間來回,直到按「停止」(停下來時回到中間)。馬達一定要空載,發燙或有怪聲就按停止。電池電量低、電壓不符、馬達沒回應時會自動停。要掃滿整個行程,左端填 800、右端填 2200(預設留了一點餘裕)。</div>
-  <div id="testres"></div>
+  <div class="warn">會一直在左端和右端之間來回,直到按「停止」。發燙或有怪聲就按停止。</div>
+  </details>
 </div>
 
 <div class="card"><h2>記錄</h2><div id="log"></div></div>
@@ -120,7 +112,7 @@ async function refresh(){
   else{$('clsmsg').innerHTML='<span class="bad big">電池和選的馬達不符!不要插馬達,已插的請馬上拔掉。</span>';}
   if(s.sel!=0){document.querySelector('input[name=cls][value="'+s.sel+'"]').checked=true;}
   const canMove=!!(s.match&&!s.low);
-  $('btest').disabled=!canMove;$('bm100').disabled=!canMove;$('bp100').disabled=!canMove;$('bhome').disabled=!canMove;$('bcenter').disabled=!canMove;$('bsweep').disabled=!canMove;
+  $('bm100').disabled=!canMove;$('bp100').disabled=!canMove;$('bcenter').disabled=!canMove;$('bsweep').disabled=!canMove;
 }
 setInterval(refresh,2500);refresh();
 
@@ -142,26 +134,13 @@ $('bset').onclick=()=>run($('bset'),async()=>{
   $('scanres').innerHTML='<span class="'+(j.ok?'ok':'bad')+' big">'+(j.msg||'')+'</span>';
   if(j.ok)$('tid').value=n;
 });
-$('bstat').onclick=()=>run($('bstat'),async()=>{
-  const j=await api('/api/status?id='+$('tid').value);
-  if(!j.ok){$('testres').innerHTML='<span class="bad">'+j.msg+'</span>';log(j.msg);return;}
-  $('testres').innerHTML='位置 '+j.pos+'(1500 = 中點)<br>輸入電壓(原始值) '+j.volt+'<br>電流(原始值) '+j.cur+'<br>溫度(原始值) '+j.temp+'<br>ID 暫存器 '+j.idreg+'<br>馬達自己的左 / 右端點設定 '+j.limL+' / '+j.limR+'(0 = 讀不到)';
-  log('狀態 位置='+j.pos+' 電壓原始='+j.volt+' 電流原始='+j.cur+' 溫度原始='+j.temp);
-});
-$('btest').onclick=()=>run($('btest'),async()=>{
-  $('testres').textContent='測試轉動中…(約 2 秒,請讓馬達空載)';
-  const j=await api('/api/test?id='+$('tid').value+'&amp='+$('amp').value);
-  $('testres').innerHTML='<span class="'+(j.ok?'ok':'bad')+'">'+j.msg+'</span>';log(j.msg);
-});
-function nudge(btn,d){return run(btn,async()=>{
-  $('testres').textContent='移動中…';
-  const j=await api('/api/move?id='+$('tid').value+'&delta='+d);
-  $('testres').innerHTML='<span class="'+(j.ok?'ok':'bad')+'">'+j.msg+'</span>';log((d>0?'+':'')+d+':'+j.msg);
-});}
-$('bcenter').onclick=()=>run($('bcenter'),async()=>{
-  const j=await api('/api/center?id='+$('tid').value);
-  $('testres').innerHTML='<span class="'+(j.ok?'ok':'bad')+'">'+j.msg+'</span>';log(j.msg);
-});
+async function fastMove(path){
+  try{
+    const r=await fetch(path);const j=await r.json();
+    $('testres').innerHTML='<span class="'+(j.ok?'ok':'bad')+'">'+(j.target!==undefined&&j.ok?'目標 '+j.target:j.msg)+'</span>';
+    if(!j.ok||/極限/.test(j.msg||''))log(j.msg);
+  }catch(e){$('testres').innerHTML='<span class="bad">連不上模組</span>';}
+}
 let sweepTimer=null;
 async function sweepPoll(){
   const j=await api('/api/sweepstate');
@@ -188,14 +167,7 @@ $('bsweepstop').onclick=async()=>{
   setTimeout(sweepPoll,800);
 };
 sweepPoll();
-$('bm100').onclick=()=>nudge($('bm100'),-100);
-$('bp100').onclick=()=>nudge($('bp100'),100);
-$('bhome').onclick=()=>run($('bhome'),async()=>{
-  const j=await api('/api/home?id='+$('tid').value);
-  $('testres').innerHTML='<span class="'+(j.ok?'ok':'bad')+'">'+j.msg+'</span>';log(j.msg);
-});
-$('brel').onclick=()=>run($('brel'),async()=>{
-  const j=await api('/api/release?id='+$('tid').value);
-  $('testres').innerHTML='<span class="'+(j.ok?'ok':'bad')+'">'+j.msg+'</span>';log(j.msg);
-});
+$('bm100').onclick=()=>fastMove('/api/move?id='+$('tid').value+'&delta=-100');
+$('bp100').onclick=()=>fastMove('/api/move?id='+$('tid').value+'&delta=100');
+$('bcenter').onclick=()=>fastMove('/api/center?id='+$('tid').value);
 </script></body></html>)HTML";

@@ -1,0 +1,104 @@
+--- Micro_Robot/custom.ino(現在)
++++ custom_skills_proposal.ino(提案)
+@@ -261,6 +261,27 @@
+   return k != PAD_BTN_STOP && k != PAD_BTN_START && (k & mask) == mask;
+ }
+ 
++// ====== 模擬訓練出來的 4 個技能(幀 60~75,每個技能 4 個幀、每幀 200 ms)======
++// 這些幀是在電腦模擬裡練的,還沒在真機驗證:第一次請把機器人架空,確認方向再放地上。
++#define SKILL_FWD 60     // 直走(往前)
++#define SKILL_BACK 64    // 後退
++#define SKILL_SIDE_R 68  // 往右橫移(機器人自己的右邊)
++#define SKILL_SIDE_L 72  // 往左橫移
++#define SKILL_MS 200     // 每個幀的時間(要改請連模擬一起改,不然動作會不一樣)
++
++// 播放一個技能:先回站姿,4 個幀重複播放,搖桿離開這個方向(或按 Share)就回站姿。
++// 一圈 4 幀一定播完才檢查,放開搖桿時不會停在半途。
++static void skillPlay(uint16_t first, uint8_t dir) {
++  SetFrameRun(1, SKILL_MS);
++  do {
++    for (uint8_t k = 0; k < 4; k++) {
++      SetFrameRun(first + k, SKILL_MS);
++    }
++    custom_stickUpdate();
++  } while (LS_DIR == dir && pad_getKey() != PAD_BTN_STOP);
++  SetFrameRun(1, SKILL_MS);
++}
++
+ void custom_stickFun() {
+   custom_stickUpdate();
+ 
+@@ -296,64 +317,19 @@
+   }
+ 
+   // ---------- 左搖桿 4 個方向 ----------
+-  // 連續動作:用 do while,條件放「搖桿還在這個方向、而且沒按其他按鍵」,
+-  // 內層一定要呼叫 custom_stickUpdate(),不然出不來。
++  // 上 = 直走,下 = 後退,左 / 右 = 往左 / 往右橫移(模擬訓練的技能,見上面 skillPlay)
+   switch (LS_DIR) {
+     case DIR_UP:
+-      SetFrameRun(1, 50);
+-      do {
+-        SetFrameRun(9, 40);
+-        SetFrameRun(8, 45);
+-        custom_stickUpdate();
+-      } while (LS_DIR == DIR_UP && pad_getKey() != PAD_BTN_STOP);
+-      SetFrameRun(1, 100);
++      skillPlay(SKILL_FWD, DIR_UP);
+       break;
+     case DIR_DOWN:
+-      SetFrameRun(1, 50);
+-      do {
+-        SetFrameRun(11, 40);
+-        SetFrameRun(10, 45);
+-        custom_stickUpdate();
+-      } while (LS_DIR == DIR_DOWN && pad_getKey() != PAD_BTN_STOP);
+-      SetFrameRun(1, 100);
+-      break;
+-    case DIR_LEFT:  // 左搖桿往左。推的途中再加按 L2 或 R2,只會換掉其中一個動作
+-      do {
+-        SetFrameRun(15, 90);
+-        uint16_t k = pad_getKey();
+-        if (k == PAD_BTN_L2) {  // 往左 + L2:動作 2 換成這個(例如 60)
+-          comboLog(2);
+-          // SetFrameRun(1, 90);
+-        } else if (k == PAD_BTN_R2) {  // 往左 + R2:動作 2 換成這個
+-          comboLog(3);
+-          // SetFrameRun(1, 90);
+-        } else {  // 單純往左:動作 2 照舊(例如 12)
+-          comboLog(1);
+-          SetFrameRun(16, 60);
+-        }
+-        custom_stickUpdate();
+-      } while (LS_DIR == DIR_LEFT && pad_getKey() != PAD_BTN_STOP);
+-      comboLog(0);
+-      SetFrameRun(1, 150);
+-      break;
+-    case DIR_RIGHT:  // 左搖桿往右。推的途中再加按 L2 或 R2,只會換掉其中一個動作
+-      do {
+-        SetFrameRun(15, 90);
+-        uint16_t k = pad_getKey();
+-        if (k == PAD_BTN_L2) {  // 往右 + L2:動作 2 換成這個
+-          comboLog(5);
+-          // SetFrameRun(1, 90);
+-        } else if (k == PAD_BTN_R2) {  // 往右 + R2:動作 2 換成這個
+-          comboLog(6);
+-          // SetFrameRun(1, 90);
+-        } else {  // 單純往右:動作 2 照舊
+-          comboLog(4);
+-          SetFrameRun(17, 60);
+-        }
+-        custom_stickUpdate();
+-      } while (LS_DIR == DIR_RIGHT && pad_getKey() != PAD_BTN_STOP);
+-      comboLog(0);
+-      SetFrameRun(1, 150);
++      skillPlay(SKILL_BACK, DIR_DOWN);
++      break;
++    case DIR_LEFT:
++      skillPlay(SKILL_SIDE_L, DIR_LEFT);
++      break;
++    case DIR_RIGHT:
++      skillPlay(SKILL_SIDE_R, DIR_RIGHT);
+       break;
+     default:  // DIR_CENTER:沒推
+       break;

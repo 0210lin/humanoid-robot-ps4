@@ -30,6 +30,7 @@ def evaluate(name, env_name="straight", n=6, seed=1234):
     m = PPO.load(os.path.join(HERE, "runs", name, "model"), device="cpu")
     e = make_env(env_name, seed=seed)
     fwd, lat, yaw, peaks, lift_pct, steps, falls = [], [], [], [], [], [], 0
+    good = 0
     for _ in range(n):
         o, _ = e.reset()
         z0, x0, y0 = float(e.data.qpos[2]), float(e.data.qpos[0]), yaw_deg(e)
@@ -55,6 +56,7 @@ def evaluate(name, env_name="straight", n=6, seed=1234):
         peaks.append(peak * 1000)
         lift_pct.append(100.0 * lift_t / k)
         steps.append(events * 500.0 / k)
+        good += 1 if (abs(lat[-1]) <= 25 and abs(yaw[-1]) <= 10 and k >= 500) else 0
     res = dict(
         forward_cm=round(float(np.mean(fwd)), 1),
         lateral_cm=round(float(np.mean(np.abs(lat))), 1),
@@ -62,7 +64,7 @@ def evaluate(name, env_name="straight", n=6, seed=1234):
         peak_lift_mm=round(float(np.mean(peaks)), 1),
         lift_time_pct=round(float(np.mean(lift_pct)), 1),
         steps_per_20s=round(float(np.mean(steps)), 1),
-        falls=falls, episodes=n)
+        falls=falls, episodes=n, success_pct=round(100.0 * good / n, 1))
     res["straight_ok"] = bool(res["lateral_cm"] <= 25 and res["yaw_deg"] <= 10 and falls == 0)
     res["lift_ok"] = bool(res["peak_lift_mm"] >= 10 and res["steps_per_20s"] >= 8)
     return res

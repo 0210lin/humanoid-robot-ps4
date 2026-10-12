@@ -1,0 +1,19 @@
+{
+ "success_pct": 100.0,
+ "fitness": 233.0,
+ "falls": 0,
+ "forward_cm": 249.1,
+ "lateral_cm": 2.8,
+ "yaw_deg": 2.6,
+ "peak_lift_mm": 29.0,
+ "slip_cm_s": 10.0,
+ "episodes": 16,
+ "criteria": 3,
+ "gen": 16530,
+ "skill": "forward",
+ "label": "直走",
+ "time": "2026-10-11 13:52",
+ "goal": "20 秒前進 ≥ 100 cm、橫向偏離 ≤ 25 cm、轉向 ≤ 10°、腳最高離地 ≥ 10 mm、沒倒",
+ "first_frame": 33,
+ "frames": "33~36"
+}

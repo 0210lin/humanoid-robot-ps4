@@ -1,0 +1,8 @@
+// 走路:4 個動作幀重複播放(幀 49~52,每幀 200 ms)。條件請換成你的按鍵。
+// 播放前請先回站姿(例如 SetFrameRun(1, 200);),結束後再回站姿。
+do {
+  SetFrameRun(49, 200);
+  SetFrameRun(50, 200);
+  SetFrameRun(51, 200);
+  SetFrameRun(52, 200);
+} while (/* 你的條件,例如 LS_DIR == DIR_UP && pad_getKey() != PAD_BTN_STOP */);

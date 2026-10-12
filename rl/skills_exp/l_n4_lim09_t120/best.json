@@ -1,0 +1,17 @@
+{
+ "success_pct": 0.0,
+ "fitness": 25.6,
+ "falls": 0,
+ "forward_cm": 2.4,
+ "lateral_cm": 5.1,
+ "yaw_deg": -52.2,
+ "peak_lift_mm": 26.2,
+ "slip_cm_s": 21.0,
+ "episodes": 16,
+ "criteria": 3,
+ "gen": 1060,
+ "n": 4,
+ "T": 120,
+ "limit": 0.9,
+ "skill": "turn_l"
+}

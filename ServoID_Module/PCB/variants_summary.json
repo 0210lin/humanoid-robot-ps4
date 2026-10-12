@@ -1,0 +1,32 @@
+[
+ {
+  "v": "A",
+  "size": "31x50",
+  "area": 1550,
+  "failed": "[]",
+  "unconnected": "0",
+  "drc": {},
+  "vias": 7,
+  "tracks": 133,
+  "sw": 5.9,
+  "v5": 34.1,
+  "vbat": 36.2,
+  "total": 223.5,
+  "bottom_sig": 9.6
+ },
+ {
+  "v": "C",
+  "size": "31x47",
+  "area": 1457,
+  "failed": "[]",
+  "unconnected": "0",
+  "drc": {},
+  "vias": 7,
+  "tracks": 76,
+  "sw": 5.9,
+  "v5": 33.4,
+  "vbat": 35.1,
+  "total": 213.4,
+  "bottom_sig": 8.9
+ }
+]

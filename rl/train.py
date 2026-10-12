@@ -94,7 +94,7 @@ class ClipCallback(BaseCallback):
             os.makedirs(d, exist_ok=True)
             env = dict(os.environ, PYTHONIOENCODING="utf-8")
             subprocess.run([sys.executable, "record.py", self.name, "--out", os.path.join(d, tag + ".gif")], cwd=HERE, env=env, timeout=900)
-            subprocess.run([sys.executable, "eval_walk.py", self.name, "--env", self.name, "--csv", os.path.join(d, "metrics.csv"), "--tag", tag],
+            subprocess.run([sys.executable, "eval_walk.py", self.name, "--env", self.name, "--n", "16", "--csv", os.path.join(d, "metrics.csv"), "--tag", tag],
                            cwd=HERE, env=env, timeout=900)
             self._update_best(tag)
             import clips_index
@@ -109,7 +109,8 @@ class ClipCallback(BaseCallback):
             r = rows[-1]
             if r.get("tag") != tag:
                 return
-            score = float(r["lateral_cm"]) + 1.5 * float(r["yaw_deg"]) + (0 if r["lift_ok"] == "True" else 100) + 200 * int(r["falls"])
+            succ = float(r.get("success_pct") or 0.0)      # 16 次測試裡「走直達標」的比例(越高越好)
+            score = (100.0 - succ) + 0.2 * float(r["lateral_cm"]) + 0.5 * float(r["yaw_deg"]) + (0 if r["lift_ok"] == "True" else 100) + 100 * int(r["falls"])
             bj = os.path.join(HERE, "runs", self.name, "best.json")
             best = json.load(open(bj, encoding="utf-8")) if os.path.exists(bj) else None
             if best is None or score < best["score"]:

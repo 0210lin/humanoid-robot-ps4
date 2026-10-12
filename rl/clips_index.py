@@ -46,9 +46,9 @@ def build(name):
             out.append("<table><tr><td>前進(20 秒)</td><td>%s cm</td></tr><tr><td>橫向偏離(平均)</td><td>%s cm</td></tr>"
                        "<tr><td>身體轉向(平均)</td><td>%s°</td></tr><tr><td>腳最高離地(平均)</td><td>%s mm</td></tr>"
                        "<tr><td>有腳離地 ≥ 10 mm 的時間</td><td>%s %%</td></tr><tr><td>20 秒內抬腳次數</td><td>%s</td></tr>"
-                       "<tr><td>倒下次數(%s 次測試)</td><td>%s</td></tr></table>" % (
+                       "<tr><td>倒下次數(%s 次測試)</td><td>%s</td></tr><tr><td>走直達標的比例(每次都要橫向 ≤ 25 cm 且轉向 ≤ 10°)</td><td>%s %%</td></tr></table>" % (
                            r.get("forward_cm"), r.get("lateral_cm"), r.get("yaw_deg"), r.get("peak_lift_mm"),
-                           r.get("lift_time_pct"), r.get("steps_per_20s"), r.get("episodes"), r.get("falls")))
+                           r.get("lift_time_pct"), r.get("steps_per_20s"), r.get("episodes"), r.get("falls"), r.get("success_pct", "-")))
         out.append("</div>")
     out.append("</body></html>")
     with open(os.path.join(d, "index.html"), "w", encoding="utf-8") as f:

@@ -1,0 +1,19 @@
+{
+ "success_pct": 81.2,
+ "fitness": 207.8,
+ "falls": 0,
+ "forward_cm": -244.8,
+ "lateral_cm": -9.7,
+ "yaw_deg": -2.0,
+ "peak_lift_mm": 30.7,
+ "slip_cm_s": 13.7,
+ "episodes": 16,
+ "criteria": 3,
+ "gen": 6630,
+ "skill": "backward",
+ "label": "後退",
+ "time": "2026-10-11 13:53",
+ "goal": "20 秒後退 ≥ 100 cm、橫向偏離 ≤ 25 cm、轉向 ≤ 10°、腳最高離地 ≥ 10 mm、沒倒",
+ "first_frame": 37,
+ "frames": "37~40"
+}

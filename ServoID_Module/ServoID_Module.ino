@@ -89,6 +89,7 @@ bool classMatches(float v) {
 // ---------- 匯流排收發 ----------
 // 單線半雙工:送出去的資料自己也會聽到(回音),先讀掉再等馬達的回應。
 // expect = 預期回應長度(0 = 不等回應)。回傳 true = 收到完整、檢查碼對、命令對的回應。
+static size_t lastGot = 0;   // 最近一次 transact 實際收到幾個位元組(除錯用)
 bool transact(const uint8_t* tx, size_t n, size_t expect, uint8_t* rx, uint32_t timeoutMs) {
   while (Serial1.available()) Serial1.read();
   ledSet(true);
@@ -108,6 +109,7 @@ bool transact(const uint8_t* tx, size_t n, size_t expect, uint8_t* rx, uint32_t 
     while (got < expect && (millis() - t0) < timeoutMs) {
       if (Serial1.available()) rx[got++] = Serial1.read();
     }
+    lastGot = got;
     ok = (got == expect) && servobus::checksum(rx, expect - 1) == rx[expect - 1] && rx[0] == tx[0] && rx[1] == tx[1];
   }
   ledSet(false);
@@ -229,17 +231,36 @@ void handleSetId() {
   if (n > 1) { sendResult(false, String("匯流排上有 ") + n + " 顆馬達,為了安全只能一次改一顆,請只接一顆"); return; }
   uint8_t oldId = ids[0];
   if (oldId == newId) { sendResult(true, String("這顆本來就是 ") + newId + " 號,不用改"); return; }
-  uint8_t tx[12], rx[8];
-  size_t len = servobus::writeReg(oldId, servobus::REG_ID, (uint16_t)newId, tx);
+  uint8_t tx[12], rx[16];
+  // 先讀目前的 ID 暫存器:高位元組(廣播 ID)原樣保留,只改低位元組
+  uint16_t before = 0;
+  bool gotBefore = readReg(oldId, servobus::REG_ID, before);
+  uint16_t value = (uint16_t)((gotBefore ? (before & 0xFF00) : 0) | newId);
+  size_t len = servobus::writeReg(oldId, servobus::REG_ID, value, tx);
   if (!len) { sendResult(false, "內部錯誤:封包產生失敗"); return; }
-  transact(tx, len, 3, rx, 8);   // 回應可能用舊 ID 也可能沒有,不管它,等一下用讀回確認
-  delay(1500);                    // 原廠工具也是等 1.5 秒才確認
+  bool wrOk = transact(tx, len, 3, rx, 20);   // 回應可能用舊 ID 也可能沒有
+  size_t wrGot = lastGot;
+  char hx[40] = "";
+  for (size_t i = 0; i < wrGot && i < 8; i++) { char b[4]; snprintf(b, sizeof(b), "%02X ", rx[i]); strcat(hx, b); }
+  // 原廠工具固定等 1.5 秒;這裡改成每 40 ms 試一次,新 ID 一回應就結束(最多等 1.5 秒),再多等 200 ms 讓馬達存好
   uint16_t idr = 0;
-  bool seesNew = pingId((uint8_t)newId) && readReg((uint8_t)newId, servobus::REG_ID, idr) && (idr & 0xFF) == newId;
+  bool seesNew = false;
+  for (uint32_t t0 = millis(); millis() - t0 < 1500 && !seesNew; delay(40))
+    seesNew = pingId((uint8_t)newId) && readReg((uint8_t)newId, servobus::REG_ID, idr) && (idr & 0xFF) == newId;
+  if (seesNew) delay(200);
   bool oldGone = !pingId(oldId);
+  String found = "";
+  int n2 = 0;
+  if (!(seesNew && oldGone)) {          // 只有失敗才全掃一遍,把現況給你看
+    uint8_t ids2[8];
+    n2 = scanBus(ids2, 8);
+    for (int i = 0; i < n2 && i < 8; i++) { if (i) found += ","; found += ids2[i]; }
+  }
+  String dbg = String("(除錯:舊 ID ") + oldId + ",寫入前暫存器 " + (gotBefore ? String(before, HEX) : String("讀不到")) + ",寫入值 " + String(value, HEX) +
+               ",寫入回應 " + (wrOk ? "OK " : "無/錯 ") + wrGot + " 位元組 [" + hx + "],寫入後掃到 [" + (n2 ? found : String("沒有")) + "])";
   if (seesNew && oldGone) sendResult(true, String("成功:原本 ") + oldId + " 號 → 現在是 " + newId + " 號,可以裝上機器人了");
-  else if (seesNew) sendResult(false, String("新 ID ") + newId + " 有回應,但舊 ID " + oldId + " 也還有回應,請重新掃描確認");
-  else sendResult(false, String("寫入後沒讀回新 ID ") + newId + "。請按掃描看馬達現在是幾號,必要時用原廠工具確認");
+  else if (seesNew) sendResult(false, String("新 ID ") + newId + " 有回應,但舊 ID " + oldId + " 也還有回應。" + dbg);
+  else sendResult(false, String("寫入後沒讀回新 ID ") + newId + "。" + dbg);
 }
 
 void handleTest() {
@@ -294,20 +315,42 @@ bool moveGate(int id, uint16_t& cur) {
   return true;
 }
 
+// 快速版:按一次就送一個指令,不等馬達做完、不讀回位置,所以可以一直連按,目標一路累加。
+// 目標位置記在 gTgt(第一次或換馬達時才讀一次馬達的實際位置),夾在 800~2200。
+static int gTgtId = -1;
+static uint16_t gTgt = 1500;
+
+bool batteryGate() {
+  float v = readVbat();
+  if (!classMatches(v)) { sendResult(false, "電池電壓和你選的馬達電壓不符,或還沒選,不能動"); return false; }
+  if (lowBattery(v)) { sendResult(false, "電池電量偏低,不能動"); return false; }
+  return true;
+}
+
+void sendTarget(bool ok, const String& msg) {
+  sendJson(String("{\"ok\":") + (ok ? "true" : "false") + ",\"msg\":\"" + esc(msg) + "\",\"target\":" + gTgt + "}");
+}
+
 void handleMove() {
   int id = argInt("id", 0);
   int delta = constrain(argInt("delta", 0), -100, 100);
-  uint16_t cur;
-  if (!moveGate(id, cur)) return;
-  if (gHomeId != id) { gHomeId = id; gHomePos = cur; }   // 換了一顆馬達,重新記原位
-  int target = servobus::clampPos((int)cur + delta);
-  bool ok = movePos((uint8_t)id, (uint16_t)target, 300);
-  delay(450);
-  uint16_t p1 = 0;
-  bool r = readReg((uint8_t)id, servobus::REG_CURR_POS, p1);
-  int off = r ? (int)p1 - (int)gHomePos : 0;
-  String m = String("目標 ") + target + (r ? String(",實際 ") + p1 + "(離原位 " + (off >= 0 ? "+" : "") + off + ")" : String(",讀不到實際位置")) + (ok ? "" : "(馬達沒回應位置指令)");
-  sendJson(String("{\"ok\":") + ((ok && r) ? "true" : "false") + ",\"msg\":\"" + esc(m) + "\",\"pos\":" + (r ? p1 : 0) + ",\"home\":" + gHomePos + ",\"off\":" + off + "}");
+  if (busBusy()) return;
+  if (!servobus::validId((uint8_t)id)) { sendResult(false, "ID 不合法(1~127)"); return; }
+  if (!batteryGate()) return;
+  if (gTgtId != id) {
+    uint16_t cur;
+    if (!readReg((uint8_t)id, servobus::REG_CURR_POS, cur)) { sendResult(false, String("讀不到 ") + id + " 號馬達的位置(沒接好、沒通電,或 ID 不對)"); return; }
+    if (cur < servobus::POS_MIN || cur > servobus::POS_MAX) { sendResult(false, String("馬達回報位置 ") + cur + " 超出 800~2200,不動"); return; }
+    gTgt = cur; gTgtId = id;
+  }
+  uint16_t before = gTgt;
+  gTgt = servobus::clampPos((int)gTgt + delta);
+  bool ok = movePos((uint8_t)id, gTgt, 120);
+  if (!ok) gTgtId = -1;                        // 沒回應:下次重新讀實際位置
+  String m = String("目標 ") + gTgt;
+  if (gTgt == before && delta != 0) m += "(已到極限)";
+  else if (!ok) m += "(馬達沒回應)";
+  sendTarget(ok, m);
 }
 
 void handleHome() {
@@ -325,14 +368,12 @@ void handleHome() {
 
 void handleCenter() {
   int id = argInt("id", 0);
-  uint16_t cur;
-  if (!moveGate(id, cur)) return;
-  bool ok = movePos((uint8_t)id, 1500, 500);
-  delay(650);
-  uint16_t p1 = 0;
-  bool r = readReg((uint8_t)id, servobus::REG_CURR_POS, p1);
-  String m = String("回中點 1500") + (r ? String(",實際 ") + p1 : String(",讀不到實際位置")) + (ok ? "" : "(馬達沒回應位置指令)");
-  sendResult(ok && r, m);
+  if (busBusy()) return;
+  if (!servobus::validId((uint8_t)id)) { sendResult(false, "ID 不合法(1~127)"); return; }
+  if (!batteryGate()) return;
+  bool ok = movePos((uint8_t)id, 1500, 400);
+  if (ok) { gTgt = 1500; gTgtId = id; } else gTgtId = -1;
+  sendTarget(ok, ok ? String("回中點 1500") : String("馬達沒回應"));
 }
 
 // ---------- 來回掃的啟動 / 停止 / 狀態 ----------
@@ -423,9 +464,10 @@ void setup() {
   uint8_t mac[6];
   WiFi.macAddress(mac);
   char ssid[24];
-  snprintf(ssid, sizeof(ssid), "ServoID-%02X%02X", mac[4], mac[5]);
+  snprintf(ssid, sizeof(ssid), "HurtMakerID");   // 固定名稱(原本是 ServoID-加板子編號,多塊板子時才需要不同名稱)
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, AP_PASS);
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);   // ESP32-C3 SuperMini 常見問題:全功率時熱點不穩 / 消失,降低功率比較穩
   Serial.printf("WiFi 熱點:%s  密碼:%s  網址:http://%s\n", ssid, AP_PASS, WiFi.softAPIP().toString().c_str());
 
   server.on("/", []() { server.send_P(200, "text/html; charset=utf-8", PAGE); });

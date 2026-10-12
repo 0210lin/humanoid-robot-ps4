@@ -1,0 +1,49 @@
+** Drc report for ServoID_Module.kicad_pcb **
+** Created on 2026-10-09T21:39:45 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 9 DRC violations **
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: 電路板設定中的 "絲印" 約束; warning
+    @(31.0000 mm, 50.0000 mm): Segment on Edge.Cuts
+    @(9.0000 mm, 49.8000 mm): PCB text 'BAT-' on F.Silkscreen
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: 電路板設定中的 "絲印" 約束; warning
+    @(31.0000 mm, 50.0000 mm): Segment on Edge.Cuts
+    @(13.5000 mm, 49.8000 mm): PCB text 'BAT+' on F.Silkscreen
+[text_height]: 文字高度超出範圍 (電路板設定中的 "絲印文字高度" 約束 最小高度 0.8000 mm; 實際 0.7000 mm)
+    Rule: 電路板設定中的 "絲印文字高度" 約束; warning
+    @(9.0000 mm, 49.8000 mm): PCB text 'BAT-' on F.Silkscreen
+[text_height]: 文字高度超出範圍 (電路板設定中的 "絲印文字高度" 約束 最小高度 0.8000 mm; 實際 0.7000 mm)
+    Rule: 電路板設定中的 "絲印文字高度" 約束; warning
+    @(13.5000 mm, 49.8000 mm): PCB text 'BAT+' on F.Silkscreen
+[text_height]: 文字高度超出範圍 (電路板設定中的 "絲印文字高度" 約束 最小高度 0.8000 mm; 實際 0.7000 mm)
+    Rule: 電路板設定中的 "絲印文字高度" 約束; warning
+    @(17.5000 mm, 45.5000 mm): PCB text 'GND' on F.Silkscreen
+[text_height]: 文字高度超出範圍 (電路板設定中的 "絲印文字高度" 約束 最小高度 0.8000 mm; 實際 0.7000 mm)
+    Rule: 電路板設定中的 "絲印文字高度" 約束; warning
+    @(20.0400 mm, 45.5000 mm): PCB text 'PWR' on F.Silkscreen
+[text_height]: 文字高度超出範圍 (電路板設定中的 "絲印文字高度" 約束 最小高度 0.8000 mm; 實際 0.7000 mm)
+    Rule: 電路板設定中的 "絲印文字高度" 約束; warning
+    @(22.5800 mm, 45.5000 mm): PCB text 'SIG' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(6.5000 mm, 0.5000 mm): Segment of U2 on F.Silkscreen
+    @(7.8800 mm, 1.3000 mm): PTH pad L1 [<no net>] of U2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(6.5000 mm, 0.5000 mm): Segment of U2 on F.Silkscreen
+    @(23.1200 mm, 1.3000 mm): PTH pad R1 [V5S] of U2
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **
