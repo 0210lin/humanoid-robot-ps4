@@ -533,6 +533,51 @@ public class Plus {
         return sb.toString();
     }
 
+    static boolean sameBytes(File a, File b) {
+        try {
+            return a.isFile() && b.isFile() && a.length() == b.length()
+                    && java.util.Arrays.equals(Files.readAllBytes(a.toPath()), Files.readAllBytes(b.toPath()));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 做跟「儲存設定」「轉換設定」兩個按鈕一樣的事,但不跳檔案視窗:
+     *   儲存設定 = ConfigSettingIO.write(目前載入的設定檔, MotorSet)
+     *   轉換設定 = ConfigSettingIO.writeExport(motor.h 來源檔, MotorSet)
+     * 存設定檔前先備份到 backup。畫面上改了但還沒按「寫入」的那一幀不會存(跟原本的按鈕一樣)。
+     */
+    static void autoSaveAndConvert(File motorOut) throws Exception {
+        Object outer = outer();
+        Object ms = fld(outer, "MotorSet");
+        String cfg = String.valueOf(fld(ms, "SettingConfigPath"));
+        File cf = new File(cfg);
+        if (cfg.trim().isEmpty() || cfg.equals("null")) {
+            log("(還沒有載入設定檔,略過自動儲存 / 轉換)");
+            return;
+        }
+        Class<?> ioC = Class.forName("main.ConfigSettingIO");
+        java.lang.reflect.Constructor<?> ctor = ioC.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        Object io = ctor.newInstance();
+        java.lang.reflect.Method write = ioC.getDeclaredMethod("write", String.class, ms.getClass());
+        java.lang.reflect.Method export = ioC.getDeclaredMethod("writeExport", String.class, ms.getClass());
+        write.setAccessible(true);
+        export.setAccessible(true);
+        if (cf.isFile()) {
+            File bak = new File(root, "backup");
+            bak.mkdirs();
+            String ts = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            Files.copy(cf.toPath(), new File(bak, cf.getName() + ".bak_" + ts).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+        Object r1 = write.invoke(io, cf.getAbsolutePath(), ms);
+        log("已自動儲存設定:" + cf.getName() + "(回傳 " + r1 + ")");
+        if (motorOut.getParentFile() != null) motorOut.getParentFile().mkdirs();
+        Object r2 = export.invoke(io, motorOut.getAbsolutePath(), ms);
+        log("已自動轉換成 " + motorOut.getName() + "(回傳 " + r2 + ")");
+    }
+
     static void runUpdate(java.util.Map<String, String> edits, boolean force) throws Exception {
         showLog();
         Thread.sleep(300);
@@ -553,8 +598,20 @@ public class Plus {
             return;
         }
 
-        // 2. 複製 motor.h(只有 Tools_MotorAdj 裡的比較新才複製;直接輸出到 Micro_Robot 的不會被蓋掉)
-        if (src.exists() && src.lastModified() > dst.lastModified()) {
+        // 1.5 自動「儲存設定」+「轉換設定」(以前要先手動按這兩個鈕):
+        //     把畫面上已經「寫入」的幀存回目前載入的設定檔,再輸出 motor.h。
+        //     不想要自動:在 MotorAdjPlus.properties 加一行 autoSaveConvert=0
+        if (!"0".equals(Settings.p.getProperty("autoSaveConvert", "1").trim())) {
+            try {
+                autoSaveAndConvert(src);
+            } catch (Throwable t) {
+                Throwable c = (t instanceof java.lang.reflect.InvocationTargetException && t.getCause() != null) ? t.getCause() : t;
+                log("[警告] 自動儲存 / 轉換失敗:" + c + "(照原本的 motor.h 繼續)");
+            }
+        }
+
+        // 2. 複製 motor.h(只有 Tools_MotorAdj 裡的比較新、而且內容有不同才複製;直接輸出到 Micro_Robot 的不會被蓋掉)
+        if (src.exists() && src.lastModified() > dst.lastModified() && !sameBytes(src, dst)) {
             File bak = new File(root, "backup");
             bak.mkdirs();
             String ts = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());

@@ -1,0 +1,22 @@
+** Drc report for Controller_F.kicad_pcb **
+** Created on 2026-10-14T00:44:45 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 1 DRC violations **
+[starved_thermal]: 緩釋熱焊盤 (花焊盤) 與覆銅的連接不完整 (層 B.Cu; 覆銅 最小引線數量 2; 實際 1)
+    Local override; error
+    @(0.3000 mm, 6.6000 mm): Zone [GND] on B.Cu, priority 0
+    @(46.6800 mm, 7.3300 mm): PTH pad SH [GND] of J3
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

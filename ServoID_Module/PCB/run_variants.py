@@ -7,7 +7,7 @@ PY = os.path.join(K, "python.exe")
 CLI = os.path.join(K, "kicad-cli.exe")
 
 # 每個版本的佈線參數(環境變數)
-PARAMS = {"D": {"SERVO_CLR": "0.3", "SERVO_MINW": "0.3"}, "C": {"SERVO_TURN": "1.5"}}
+PARAMS = {"E": {"SERVO_TURN": "1.5"}, "D": {"SERVO_CLR": "0.3", "SERVO_MINW": "0.3"}, "C": {"SERVO_TURN": "1.5"}}
 
 
 def run(v, *args, extra=None):

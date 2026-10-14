@@ -513,6 +513,17 @@ public class CodeTab {
     /** 重新讀取 custom.ino 並清掉所有未寫入的修改 */
     static void reload() {
         try {
+            // 記住目前正在改的那一項和游標位置:燒錄 / 重新載入之後,留在原本的按鍵,不要跳回第一項
+            String keepKey = null;
+            int keepCaret = 0;
+            try {
+                int i0 = combo.getSelectedIndex();
+                if (blocks != null && i0 >= 0 && i0 < blocks.size()) {
+                    keepKey = blocks.get(i0).key;
+                    keepCaret = area.getCaretPosition();
+                }
+            } catch (Throwable ignore) {
+            }
             List<Block> nb = parse(readLines());
             synchronized (CodeTab.class) { edits.clear(); }
             blocks = nb;
@@ -520,8 +531,25 @@ public class CodeTab {
             combo.removeAllItems();
             for (Block b : blocks) combo.addItem(b.label);
             loading = false;
-            if (combo.getItemCount() > 0) combo.setSelectedIndex(0);
+            int sel = 0;
+            boolean found = false;
+            if (keepKey != null) {
+                for (int i = 0; i < blocks.size(); i++) {
+                    if (keepKey.equals(blocks.get(i).key)) {
+                        sel = i;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (combo.getItemCount() > 0) combo.setSelectedIndex(sel);
             showSelected();
+            if (found) {
+                try {
+                    area.setCaretPosition(Math.min(keepCaret, area.getDocument().getLength()));
+                } catch (Throwable ignore) {
+                }
+            }
         } catch (Exception ex) {
             loading = false;
             JOptionPane.showMessageDialog(null, "讀取 custom.ino 失敗:" + ex.getMessage());

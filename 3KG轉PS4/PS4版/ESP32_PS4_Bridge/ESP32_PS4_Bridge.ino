@@ -226,13 +226,13 @@ void rumble(uint8_t pulses, uint16_t onMs, uint16_t offMs)
 
 // 按住這幾顆鍵時,手把持續震動,放開就停(Share / Options 不算)
 #define HOLD_RUMBLE_KEYS  (K_CIRCLE | K_SQUARE | K_R1 | K_L1)
-#define HOLD_SMALL        70     // 按住時:小馬達(輕輕的細震)強度 0~255
-#define HOLD_LARGE        0      // 按住時:大馬達(厚重的震)強度,0 = 不用,想要更明顯再調高
+#define HOLD_SMALL        160    // 按住時:小馬達(細震)強度 0~255(原本 70)
+#define HOLD_LARGE        120    // 按住時:大馬達(厚重的震)強度(原本 0 = 不用);必殺技是 255
 
 static uint16_t rumCur = 0;      // 目前實際送給手把的震動(小馬達 | 大馬達 << 8)
 
 // ====== 必殺技震動 ======
-// 左搖桿「前推」或「後推」再加按 △ = 兩招必殺技:手把持續大力震動,放開就停。
+// 左搖桿「前推」、「左推」或「下推」再加按 △ = 必殺技:手把持續大力震動,放開就停。
 // 方向的判斷和 Micro 的 custom.ino 一樣(死區 60,哪個軸推得多就算哪個方向)。
 // Micro 有接 D9 -> G32 回報狀態時:mode 2 這兩招沒有動作,就不震。沒接線時,不分 mode 都會震。
 #define SPECIAL_STRENGTH  255    // 必殺技震動強度 0~255(小馬達、大馬達都開到這個值)
@@ -244,7 +244,10 @@ static bool specialMove(uint16_t k)
   if (k == K_STOP || k == K_START || !(k & K_TRIANGLE)) return false;
   int8_t lx, ly;
   readLeftStick(lx, ly);
-  if (abs((int)ly) < SPECIAL_DEAD || abs((int)ly) <= abs((int)lx)) return false;   // 要是「前推」或「後推」
+  bool up   = ly >= SPECIAL_DEAD && abs((int)ly) > abs((int)lx);     // 前推(和 Micro 的 LS_DIR == DIR_UP 一樣)
+  bool left = lx <= -SPECIAL_DEAD && abs((int)lx) >= abs((int)ly);  // 左推(LS_DIR == DIR_LEFT)
+  bool down = ly <= -SPECIAL_DEAD && abs((int)ly) > abs((int)lx);   // 下推(LS_DIR == DIR_DOWN)
+  if (!(up || left || down)) return false;
   bool microOk = microEver && (millis() - microMs < MICRO_STATUS_TIMEOUT_MS);
   if (microOk && (microStatus & 0x04)) return false;                              // mode 2:沒有這兩招
   return true;
@@ -277,7 +280,7 @@ void updateRumble()
   bool hold = (k != K_STOP) && (k != K_START) && (k & HOLD_RUMBLE_KEYS);
 
   // 事件震動優先;沒有事件時,按住就持續震,放開就停
-  bool special = specialMove(k);        // 左搖桿前推 / 後推 + △:必殺技,大力震
+  bool special = specialMove(k);        // 左搖桿前推 / 左推 / 下推 + △:必殺技,大力震
 
   uint8_t wantS = rumIsOn ? RUMBLE_STRENGTH : (special ? SPECIAL_STRENGTH : (hold ? HOLD_SMALL : 0));
   uint8_t wantL = rumIsOn ? RUMBLE_STRENGTH : (special ? SPECIAL_STRENGTH : (hold ? HOLD_LARGE : 0));

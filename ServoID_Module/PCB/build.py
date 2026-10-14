@@ -78,8 +78,8 @@ board.Add(smfp); register(smfp, SM["ref"])
 # 電池焊點(2)與馬達焊點(3)
 batfp = FOOTPRINT(board); batfp.SetReference("J1"); batfp.SetValue("BATTERY")
 batfp.SetPosition(P(0, 0))
-tht_pad(batfp, "1", L.BAT_PADS[0][1], L.BAT_PADS[0][2], 1.6, 3.0, "GND")
-tht_pad(batfp, "2", L.BAT_PADS[1][1], L.BAT_PADS[1][2], 1.6, 3.0, "BAT_RAW")
+tht_pad(batfp, "1", L.BAT_PADS[0][1], L.BAT_PADS[0][2], getattr(L, "BAT_DRILL", 1.6), getattr(L, "BAT_DIA", 3.0), "GND")
+tht_pad(batfp, "2", L.BAT_PADS[1][1], L.BAT_PADS[1][2], getattr(L, "BAT_DRILL", 1.6), getattr(L, "BAT_DIA", 3.0), "BAT_RAW")
 board.Add(batfp); register(batfp, "J1")
 motfp = FOOTPRINT(board); motfp.SetReference("J2"); motfp.SetValue("MOTOR")
 motfp.SetPosition(P(0, 0))
@@ -144,10 +144,16 @@ gnd_zone(B_Cu)
 pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 
 # 標示:馬達三個焊點、電池兩個焊點、標題
-for nm, x, y in L.MOTOR_PADS:
-    silk_text(nm, x, y - 3.3, 0.8, rot=90)
-for nm, x, y in L.BAT_PADS:
-    silk_text("-" if nm == "-" else "+", x - 2.4, y, 1.0)
+if getattr(L, "LABEL_BELOW", False):     # 標示放在焊點下方(上方有 Q1 等零件)
+    for nm, x, y in L.MOTOR_PADS:
+        silk_text(nm, x, y + 1.5, 0.8)
+    for nm, x, y in L.BAT_PADS:
+        silk_text(nm, x, y + 1.5, 0.8)
+else:
+    for nm, x, y in L.MOTOR_PADS:
+        silk_text(nm, x, y - 3.3, 0.8, rot=90)
+    for nm, x, y in L.BAT_PADS:
+        silk_text("-" if nm == "-" else "+", x - 2.4, y, 1.0)
 silk_text("ServoID 2S/3S", 11.0, 23.4, 0.9)
 silk_text("USB", 15.5, 1.5, 0.8)
 for fp in board.GetFootprints():          # 零件編號太擠,先全部隱藏(位置和料號看 BOM / CPL)

@@ -27,6 +27,8 @@ int mode = 1;
 int timer = 0;
 volatile uint8_t remoteRunning = 0;  // 1 = 已按過 Options,進入遙控模式(偵錯行會顯示 RUN / WAIT)
 #define SWITCH_HOLD_MS 300  // 「右搖桿 + △」要按住多久才切換 mode(毫秒)
+#define STICKBTN_MS 80      // L3 / R3 要連續按著多久才算(毫秒),濾掉雜訊
+#define STICKBTN_NEAR 40    // 同一支搖桿推超過這個值(0~127),它的 L3 / R3 就當作雜訊
 
 // 在序列埠監控視窗(115200)印出目前是 mode 幾。接上電腦用 MotorAdj 時不印,不影響它。
 // 另外 pad.ino 的除錯行(每 200 ms 一行,PAD_DEBUG_PRINT)最後也會帶 mode=幾。
@@ -86,7 +88,7 @@ static uint8_t keyHas(uint16_t mask) {
 //   原本 ← + ↓                      →  L3
 //   原本 ○ + ✕                      →  R3
 //   原本 □ + ✕                      →  左搖桿前推 + △
-//   原本 △ + □(再加 R1 → 幀 46)    →  左搖桿下推(再加 △ → 幀 46)
+//   原本 △ + □(再加 R1 → 幀 46)    →  左搖桿左推 + △(按著 △ 多做幀 46)
 //   原本 → + ↓ 按住 1 秒(到 mode 2)  →  右搖桿下推 + △ 按住 300 毫秒
 //   原本 ↑ + → 按住 1 秒(回 mode 1)  →  右搖桿上推 + △ 按住 300 毫秒
 // 沒有搬過來(先不用):原本 ○ + △、↑ + ←(程式用註解留在 custom_gamepadKeyFun() 裡)。
@@ -147,7 +149,26 @@ void custom_stickFun() {
 
   // ---------- 按下搖桿(L3 / R3)----------
   // 連續動作:按著不放會持續,放開收尾。條件放「搖桿還按著、而且沒按 Share」。
-  switch (pad_getStickButtons()) {
+  //
+  // 防雜訊(用力推搖桿時,手指會順便壓到搖桿鍵,或接點瞬間彈跳):
+  //   1. L3 / R3 要【連續按著】STICKBTN_MS 毫秒以上才算,瞬間的碰觸忽略。
+  //   2. 同一支搖桿正在被推動(推過 STICKBTN_NEAR)時,它的 L3 / R3 不算。
+  static uint32_t l3Since = 0, r3Since = 0;
+  uint8_t sbRaw = pad_getStickButtons();
+  uint8_t sbOk = 0;
+  if ((sbRaw & PAD_L3) && abs(pad_getStick(PAD_LX)) < STICKBTN_NEAR && abs(pad_getStick(PAD_LY)) < STICKBTN_NEAR) {
+    if (l3Since == 0) l3Since = millis();
+    if (millis() - l3Since >= STICKBTN_MS) sbOk |= PAD_L3;
+  } else {
+    l3Since = 0;
+  }
+  if ((sbRaw & PAD_R3) && abs(pad_getStick(PAD_RX)) < STICKBTN_NEAR && abs(pad_getStick(PAD_RY)) < STICKBTN_NEAR) {
+    if (r3Since == 0) r3Since = millis();
+    if (millis() - r3Since >= STICKBTN_MS) sbOk |= PAD_R3;
+  } else {
+    r3Since = 0;
+  }
+  switch (sbOk) {
     case PAD_L3:  // 只按 L3(原本 ← + ↓)
       if (mode == 1) {
         SetFrameRun(30, 150);
@@ -166,6 +187,7 @@ void custom_stickFun() {
         do {
           SetFrameRun(57, 20);
         } while (pad_getStickButtons() == PAD_L3 && pad_getKey() != PAD_BTN_STOP);
+        SetFrameRun(55, 100);
         SetFrameRun(60, 150);
         SetFrameRun(61, 150);
       }
@@ -189,6 +211,7 @@ void custom_stickFun() {
         do {
           SetFrameRun(73, 20);
         } while (pad_getStickButtons() == PAD_R3 && pad_getKey() != PAD_BTN_STOP);
+        SetFrameRun(72, 100);
         SetFrameRun(60, 150);
         SetFrameRun(61, 150);
       }
@@ -200,23 +223,23 @@ void custom_stickFun() {
 
   // ---------- 左搖桿 ----------
   // 「搖桿 + △」的組合:推搖桿 + 按 △ 啟動,之後只看 △ 還按不按著,搖桿可以放開。
-  // 「左搖桿下推」沒有按鍵,所以那一個一直看搖桿有沒有還推著。
+  // 「左搖桿左推 + △」:推搖桿 + 按 △ 啟動,之後一直看搖桿有沒有還推著(△ 放開也繼續,只是少做幀 46)。
   switch (LS_DIR) {
     case DIR_UP:  // 左搖桿前推 + △(原本 □ + ✕)。只有 mode 1
       if (mode == 1 && keyHas(PAD_BTN_TRIANGLE)) {
-        SetFrameRun(47, 500);
-        SetFrameRun(48, 200);
+        SetFrameRun(47, 400);
+        SetFrameRun(48, 80);
+        SetFrameRun(49, 280);
         do {
-          SetFrameRun(49, 20);
+          SetFrameRun(50, 20);
           custom_stickUpdate();
         } while (keyHas(PAD_BTN_TRIANGLE) && pad_getKey() != PAD_BTN_STOP);  // 只看 △ 還按著,搖桿可以放開
-        SetFrameRun(50, 100);
-        SetFrameRun(51, 200);
+        SetFrameRun(59, 200);
       }
       break;
 
-    case DIR_DOWN:  // 左搖桿下推(原本 △ + □)。推著再加按 △ 會多做幀 46(原本是再加按 R1)。只有 mode 1
-      if (mode == 1) {
+    case DIR_LEFT:  // 左搖桿左推 + △(原本 △ + □,之後是下推)。幀 45 重複,按著 △ 會多做幀 46。只有 mode 1
+      if (mode == 1 && keyHas(PAD_BTN_TRIANGLE)) {
         do {
           SetFrameRun(45, 20);
           if (keyHas(PAD_BTN_TRIANGLE)) {
@@ -225,8 +248,20 @@ void custom_stickFun() {
             SetFrameRun(45, 20);
           }
           custom_stickUpdate();
-        } while (LS_DIR == DIR_DOWN && pad_getKey() != PAD_BTN_STOP);
+        } while (LS_DIR == DIR_LEFT && pad_getKey() != PAD_BTN_STOP);  // 必殺技:一直看搖桿有沒有還推著
         SetFrameRun(1, 150);
+      }
+      break;
+
+    case DIR_DOWN:  // 左搖桿下推:還沒有動作(之後放另外一招)。手把的大力震動已經有了:下推 + △ 就會震
+          if (mode == 1 && keyHas(PAD_BTN_TRIANGLE)) {
+        SetFrameRun(39, 400);
+        SetFrameRun(40, 150);
+        do {
+          SetFrameRun(41, 20);
+          custom_stickUpdate();
+        } while (keyHas(PAD_BTN_TRIANGLE) && pad_getKey() != PAD_BTN_STOP);  // 只看 △ 還按著,搖桿可以放開
+        SetFrameRun(43, 200);
       }
       break;
 
@@ -280,8 +315,8 @@ int16_t custom_gamepadKeyFun() {
       case PAD_BTN_RIGHT:  // →(幀 14 搭配 12;mode 2:幀 64 搭配 62)
         if (mode == 1) {
           do {
-            SetFrameRun(14, 60);
-            SetFrameRun(12, 80);
+            SetFrameRun(14, 100);
+            SetFrameRun(12, 100);
           } while (pad_getKey() == PAD_BTN_RIGHT);
           SetFrameRun(12, 50);
           SetFrameRun(59, 100);
@@ -328,8 +363,8 @@ int16_t custom_gamepadKeyFun() {
       case PAD_BTN_LEFT:  // ←(幀 13 搭配 12;mode 2:幀 63 搭配 62)
         if (mode == 1) {
           do {
-            SetFrameRun(13, 60);
-            SetFrameRun(12, 80);
+            SetFrameRun(13, 100);
+            SetFrameRun(12, 100);
           } while (pad_getKey() == PAD_BTN_LEFT);
           SetFrameRun(12, 50);
           SetFrameRun(59, 100);
@@ -389,8 +424,8 @@ int16_t custom_gamepadKeyFun() {
 
       // ---------- 單鍵動作 ----------
       case PAD_BTN_TRIANGLE:
-        // 搖桿正推在「搖桿 + △」的方向上(左前、左下、右上、右下),這一下是組合的一部分,不當成單獨的 △
-        if (mode == 1 && !(LS_DIR == DIR_UP || LS_DIR == DIR_DOWN || RS_DIR == DIR_UP || RS_DIR == DIR_DOWN)) {
+        // 搖桿正推在「搖桿 + △」的方向上(左前、左左、左下、右上、右下),這一下是組合的一部分,不當成單獨的 △
+        if (mode == 1 && !(LS_DIR == DIR_UP || LS_DIR == DIR_LEFT || LS_DIR == DIR_DOWN || RS_DIR == DIR_UP || RS_DIR == DIR_DOWN)) {
           SetFrameRun(20, 800);
           SetFrameRun(21, 50);
         }
@@ -442,9 +477,9 @@ int16_t custom_gamepadKeyFun() {
 
       case PAD_BTN_R1:
         if (mode == 1) {
-          SetFrameRun(35, 100);
+          SetFrameRun(37, 100);
           do {
-            SetFrameRun(36, 20);
+            SetFrameRun(38, 20);
           } while (pad_getKey() == PAD_BTN_R1);
           SetFrameRun(59, 150);
         }
@@ -452,9 +487,9 @@ int16_t custom_gamepadKeyFun() {
 
       case PAD_BTN_L1:
         if (mode == 1) {
-          SetFrameRun(37, 100);
+          SetFrameRun(35, 100);
           do {
-            SetFrameRun(38, 20);
+            SetFrameRun(36, 20);
           } while (pad_getKey() == PAD_BTN_L1);
           SetFrameRun(59, 150);
         }
@@ -512,7 +547,7 @@ int16_t custom_gamepadKeyFun() {
       // ---------- 組合鍵 ----------
       // 下面這些組合鍵已經換成搖桿 / L3 / R3(見 custom_stickFun()):
       //   ← + ↓ → L3        ○ + ✕ → R3        □ + ✕ → 左搖桿前推 + △
-      //   △ + □(+ R1)→ 左搖桿下推(+ △)
+      //   △ + □(+ R1)→ 左搖桿左推 + △
       //   → + ↓ 按住 1 秒 → 右搖桿下推 + △ 按住 300 毫秒(mode 2);↑ + → 按住 1 秒 → 右搖桿上推 + △ 按住 300 毫秒(mode 1)
       //
       // 先不用(原本的動作留在這裡,要用的時候把每一行最前面的 // 拿掉):
