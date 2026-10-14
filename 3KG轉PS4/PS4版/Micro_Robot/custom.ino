@@ -253,8 +253,8 @@ void custom_stickFun() {
       }
       break;
 
-    case DIR_DOWN:  // 左搖桿下推:還沒有動作(之後放另外一招)。手把的大力震動已經有了:下推 + △ 就會震
-          if (mode == 1 && keyHas(PAD_BTN_TRIANGLE)) {
+    case DIR_DOWN:  // 左搖桿下推 + △。幀 39、40 起手,幀 41 重複,放開 △ 後做幀 43。只有 mode 1
+      if (mode == 1 && keyHas(PAD_BTN_TRIANGLE)) {
         SetFrameRun(39, 400);
         SetFrameRun(40, 150);
         do {
