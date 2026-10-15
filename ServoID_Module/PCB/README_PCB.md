@@ -51,5 +51,8 @@ B(緊湊但線彎)和 D(C 的位置、間距放寬到 0.3 mm)也產生並檢查�
 - 電池焊點:2.54 mm 間距、1.0 mm 孔、2.0 mm 焊盤(排針),標示 − / + 放在焊點下方。
 - AO3401A 資料表(AOS Rev 3.1):Vds -30 V、Vgs ±12 V、Id -4 A(25°C)/ -3.2 A(70°C)、Rds(on) < 50 mΩ @ -10 V、< 60 mΩ @ -4.5 V、Vgs(th) -0.5~-1.3 V。
 - 限制:MOSFET 持續電流 ~3–4 A,比保險絲 5 A 小;單顆伺服設定 ID 沒問題,不要拿來接多顆伺服長時間滿載。
-- Q1 腳位(1=G、2=S、3=D)為 SOT-23 通用腳位,下單前請對一次資料表第 1 頁的 Top View 圖。
+- Q1 腳位 1=G、2=S、3=D:2026-10-14 已對過 JLCPCB 零件頁(C15127)的 EasyEDA 符號與封裝圖,和板子接線一致。
 - 執行:`python run_variants.py E`、`python export_fab.py E`(DRC 0 項,0 條未連接)。
+- 下單資料包:`下單資料_E版/`(`python make_order_pack.py E`,2026-10-14 產生)。BOM 已填 LCSC 料號(C 版下單用的那一組 + Q1 C15127)。
+- CPL 旋轉角度已改成 JLCPCB 零件庫方向(`make_order_pack.py` 的 `JLC_ROT`):U1 0° → 270°(C 版下單時在預覽頁手動順時針轉 90° 的那個修正)、Q1 180° → 0°。`fab_E/ServoID_E_CPL.csv` 仍是 KiCad 原始角度。上傳後仍要在 JLCPCB 預覽圖確認 1 腳位置。
+- 1:1 對孔位列印:`fab_E/ServoID_E_對孔位1比1.pdf`。

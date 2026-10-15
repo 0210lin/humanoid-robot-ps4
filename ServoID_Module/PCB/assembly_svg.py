@@ -11,11 +11,13 @@ W, H = bb.GetWidth() / 1e6, bb.GetHeight() / 1e6
 ox, oy = bb.GetX() / 1e6, bb.GetY() / 1e6
 def X(mm): return M + (mm - ox) * S
 def Y(mm): return M + 70 + (mm - oy) * S
+smd_refs = sorted(fp.GetReference() for fp in b.GetFootprints() if fp.GetAttributes() & pcbnew.FP_SMD)
+PIN1 = [r for r in ("U1", "Q1") if r in smd_refs]      # 要標 1 腳紅點的零件
 out = []
 out.append('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" font-family="Microsoft JhengHei, Arial">' % (W * S + 2 * M, H * S + 2 * M + 70 + 150))
 out.append('<rect width="100%" height="100%" fill="white"/>')
 out.append('<text x="%d" y="34" font-size="22" font-weight="bold">ServoID 電路板 %s 版  組裝圖(正面,零件編號與方向)</text>' % (M, v))
-out.append('<text x="%d" y="58" font-size="14" fill="#555">板子 %.1f x %.1f mm,單面貼片。紅色粗線 = 二極體陰極(有橫線端);紅點 = U1 的 1 腳</text>' % (M, W - 0.1, H - 0.1))
+out.append('<text x="%d" y="58" font-size="14" fill="#555">板子 %.1f x %.1f mm,單面貼片。紅色粗線 = 二極體陰極(有橫線端);紅點 = %s 的 1 腳</text>' % (M, W - 0.1, H - 0.1, " / ".join(PIN1)))
 out.append('<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="#e9f3e9" stroke="black" stroke-width="2"/>' % (X(ox), Y(oy), W * S, H * S))
 for fp in b.GetFootprints():
     ref = fp.GetReference()
@@ -51,9 +53,11 @@ for fp in b.GetFootprints():
             else:
                 ys = Y(y2) if ky < cy else Y(y1)
                 out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="red" stroke-width="5"/>' % (X(x1), ys, X(x2), ys))
-        if ref == "U1":
+        if ref in PIN1:                       # 紅點畫在 1 腳的外側
             p1 = [p for p in pads if p.GetNumber() == "1"][0]
-            out.append('<circle cx="%.1f" cy="%.1f" r="5" fill="red"/>' % (X(p1.GetPosition().x / 1e6 - 0.9), Y(p1.GetPosition().y / 1e6)))
+            px = p1.GetPosition().x / 1e6
+            off = (p1.GetBoundingBox().GetWidth() / 2e6 + 0.25) * (1 if px > cx else -1)
+            out.append('<circle cx="%.1f" cy="%.1f" r="5" fill="red"/>' % (X(px + off), Y(p1.GetPosition().y / 1e6)))
         label = ref
         ty = miny - 0.25
         out.append('<text x="%.1f" y="%.1f" font-size="13" font-weight="bold" text-anchor="middle" fill="#00258a">%s %s</text>' % (X(cx), Y(ty), label, fp.GetValue()))
@@ -65,10 +69,11 @@ for fp in b.GetFootprints():
         if ref == "U2":
             out.append('<text x="%.1f" y="%.1f" font-size="15" text-anchor="middle" fill="#a30">U2 SuperMini(不用貼,自己焊)</text>' % (X(cx), Y(cy + 3)))
         else:
-            out.append('<text x="%.1f" y="%.1f" font-size="12" text-anchor="middle" fill="#a30">%s(自己焊)</text>' % (X(cx), Y(miny - 0.5), ref))
-out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">要貼的 SMD 零件:C1 C2 C3 C4 D1 D2 D3 F1 L1 R1 R2 R3 R4 R5 U1(共 15 顆)。</text>' % (M, Y(oy) + H * S + 30))
+            below = (oy + H - 0.1) - maxy >= 0.9      # 焊點下方到板邊還有空間就標在下方(上方可能有零件)
+            out.append('<text x="%.1f" y="%.1f" font-size="12" text-anchor="middle" fill="#a30">%s(自己焊)</text>' % (X(cx), Y(maxy + 0.75) if below else Y(miny - 0.5), ref))
+out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">要貼的 SMD 零件:%s(共 %d 顆)。</text>' % (M, Y(oy) + H * S + 30, " ".join(smd_refs), len(smd_refs)))
 out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">不用貼:U2(SuperMini)、J1(電池焊點)、J2(馬達焊點)、H1~H4(M3 鎖孔)。</text>' % (M, Y(oy) + H * S + 54))
-out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">二極體 D1/D2/D3:紅色粗線那一端是陰極(有橫線端)。U1:紅點旁是 1 腳。</text>' % (M, Y(oy) + H * S + 78))
+out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">二極體 D1/D2/D3:紅色粗線那一端是陰極(有橫線端)。%s:紅點旁是 1 腳。</text>' % (M, Y(oy) + H * S + 78, " / ".join(PIN1)))
 out.append('</svg>')
 open(os.path.join(HERE, "assembly_%s.svg" % v), "w", encoding="utf-8").write("\n".join(out))
 print("ok")
