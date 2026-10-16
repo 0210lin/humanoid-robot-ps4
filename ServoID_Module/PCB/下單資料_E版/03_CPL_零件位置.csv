@@ -17,3 +17,7 @@ R5,22k,R_0603_1608Metric,28.0000,-28.4000,90,top
 R6,100k,R_0603_1608Metric,21.6000,-40.6000,90,top
 R7,100k,R_0603_1608Metric,23.4000,-40.6000,90,top
 U1,AP63205WU-7,TSOT-23-6,9.0000,-37.9000,270,top
+J1,1x2P 2.54mm 彎公針,PinHeader_1x02_P2.54mm_Horizontal,10.2700,-45.0000,0,top
+J2,1x3P 2.54mm 彎公針,PinHeader_1x03_P2.54mm_Horizontal,20.0400,-45.0000,0,top
+J3,1x8P 2.54mm 母座,PinSocket_1x08_P2.54mm_Vertical,7.8800,-10.1900,270,top
+J4,1x8P 2.54mm 母座,PinSocket_1x08_P2.54mm_Vertical,23.1200,-10.1900,270,top

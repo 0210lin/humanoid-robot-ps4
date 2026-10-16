@@ -1,0 +1,17 @@
+Comment,Designator,Footprint,Quantity,LCSC Part #
+10uF 25V,C1,C_1206_3216Metric,1,C13585
+22uF,"C2,C4",C_0805_2012Metric,2,C45783
+100nF,C3,C_0603_1608Metric,1,C14663
+1N4148W,D1,D_SOD-123,1,C81598
+SS14,"D2,D3",D_SMA,2,C2480
+5A,F1,Fuse_1206_3216Metric,1,C48332
+4.7uH,L1,L_Bourns-SRN4018,1,C48427
+AO3401A,Q1,SOT-23,1,C15127
+3.3k,R1,R_0603_1608Metric,1,C22978
+22k,"R2,R5",R_0603_1608Metric,2,C31850
+47k,R3,R_0603_1608Metric,1,C25819
+100k,"R4,R6,R7",R_0603_1608Metric,3,C25803
+AP63205WU-7,U1,TSOT-23-6,1,C2071056
+Pin header 1x2P 2.54mm right angle,J1,PinHeader_1x02_P2.54mm_Horizontal,1,C54907645
+Pin header 1x3P 2.54mm right angle,J2,PinHeader_1x03_P2.54mm_Horizontal,1,C54907646
+Female header 1x8P 2.54mm vertical,"J3,J4",PinSocket_1x08_P2.54mm_Vertical,2,C27438

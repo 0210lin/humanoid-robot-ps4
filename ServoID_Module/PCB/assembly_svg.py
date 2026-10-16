@@ -12,6 +12,12 @@ ox, oy = bb.GetX() / 1e6, bb.GetY() / 1e6
 def X(mm): return M + (mm - ox) * S
 def Y(mm): return M + 70 + (mm - oy) * S
 smd_refs = sorted(fp.GetReference() for fp in b.GetFootprints() if fp.GetAttributes() & pcbnew.FP_SMD)
+sys.path.insert(0, HERE)
+from tht_parts import THT
+tht = THT.get(v, [])          # 這一版要 JLCPCB 代焊的插件:組裝圖上標出來
+tht_on = {}                   # 原本的焊盤位號 → 這上面要焊的插件
+for t in tht:
+    tht_on.setdefault(t[9], []).append(t)
 PIN1 = [r for r in ("U1", "Q1") if r in smd_refs]      # 要標 1 腳紅點的零件
 out = []
 out.append('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" font-family="Microsoft JhengHei, Arial">' % (W * S + 2 * M, H * S + 2 * M + 70 + 150))
@@ -66,14 +72,26 @@ for fp in b.GetFootprints():
             c = p.GetPosition()
             r = p.GetSizeX() / 2e6
             out.append('<circle cx="%.1f" cy="%.1f" r="%.1f" fill="#ddd" stroke="#777" stroke-width="1"/>' % (X(c.x / 1e6), Y(c.y / 1e6), r * S))
-        if ref == "U2":
+        if ref in tht_on and ref == "U2":
+            out.append('<text x="%.1f" y="%.1f" font-size="15" text-anchor="middle" fill="#00258a">J3 / J4:1×8 母座(直)要焊</text>' % (X(cx), Y(cy + 2)))
+            out.append('<text x="%.1f" y="%.1f" font-size="13" text-anchor="middle" fill="#a30">SuperMini 模組本身不用貼</text>' % (X(cx), Y(cy + 3.4)))
+            for t in tht_on[ref]:
+                out.append('<text x="%.1f" y="%.1f" font-size="13" font-weight="bold" text-anchor="middle" fill="#00258a">%s</text>' % (X(t[4]), Y(miny - 0.6), t[8]))
+        elif ref in tht_on:
+            t = tht_on[ref][0]
+            out.append('<text x="%.1f" y="%.1f" font-size="12" font-weight="bold" text-anchor="middle" fill="#00258a">%s ↓針朝外</text>' % (X(cx), Y(maxy + 0.75), t[8]))
+        elif ref == "U2":
             out.append('<text x="%.1f" y="%.1f" font-size="15" text-anchor="middle" fill="#a30">U2 SuperMini(不用貼,自己焊)</text>' % (X(cx), Y(cy + 3)))
         else:
             below = (oy + H - 0.1) - maxy >= 0.9      # 焊點下方到板邊還有空間就標在下方(上方可能有零件)
             out.append('<text x="%.1f" y="%.1f" font-size="12" text-anchor="middle" fill="#a30">%s(自己焊)</text>' % (X(cx), Y(maxy + 0.75) if below else Y(miny - 0.5), ref))
 out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">要貼的 SMD 零件:%s(共 %d 顆)。</text>' % (M, Y(oy) + H * S + 30, " ".join(smd_refs), len(smd_refs)))
-out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">不用貼:U2(SuperMini)、J1(電池焊點)、J2(馬達焊點)、H1~H4(M3 鎖孔)。</text>' % (M, Y(oy) + H * S + 54))
-out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">二極體 D1/D2/D3:紅色粗線那一端是陰極(有橫線端)。%s:紅點旁是 1 腳。</text>' % (M, Y(oy) + H * S + 78, " / ".join(PIN1)))
+if tht:
+    out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">插件也要焊:%s。</text>' % (M, Y(oy) + H * S + 54, "、".join("%s %s" % (t[0], t[1]) for t in tht)))
+    out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">J1、J2 是 90 度彎排針,針朝板子下緣外面。不用貼:U2(SuperMini 模組本身)、H1~H4。</text>' % (M, Y(oy) + H * S + 78))
+else:
+    out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">不用貼:U2(SuperMini)、J1(電池焊點)、J2(馬達焊點)、H1~H4(M3 鎖孔)。</text>' % (M, Y(oy) + H * S + 54))
+out.append('<text x="%d" y="%.1f" font-size="14" fill="#333">二極體 D1/D2/D3:紅色粗線那一端是陰極(有橫線端)。%s:紅點旁是 1 腳。</text>' % (M, Y(oy) + H * S + (102 if tht else 78), " / ".join(PIN1)))
 out.append('</svg>')
 open(os.path.join(HERE, "assembly_%s.svg" % v), "w", encoding="utf-8").write("\n".join(out))
 print("ok")

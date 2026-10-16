@@ -12,3 +12,6 @@ AO3401A,Q1,SOT-23,1,C15127,"P 通道 MOSFET AO3401A(AOS),-30V、-4A、Vgs ±12V,
 47k,R3,R_0603_1608Metric,1,C25819,"電阻 47kΩ,1%,0603"
 100k,"R4,R6,R7",R_0603_1608Metric,3,C25803,"電阻 100kΩ,1%,0603"
 AP63205WU-7,U1,TSOT-23-6,1,C2071056,"Diodes Inc. AP63205WU-7,5V 固定輸出降壓 IC,TSOT-26(TSOT-23-6)"
+1x2P 2.54mm 彎公針,J1,PinHeader_1x02_P2.54mm_Horizontal,1,C54907645,"電池接頭:2.54 mm 單排 2P 公排針,90 度彎(SHOU HAN PZ2.54-1x2PWZ),針朝板子下緣外面;1 腳 = −、2 腳 = +"
+1x3P 2.54mm 彎公針,J2,PinHeader_1x03_P2.54mm_Horizontal,1,C54907646,"馬達接頭:2.54 mm 單排 3P 公排針,90 度彎(SHOU HAN PZ2.54-1x3PWZ),針朝板子下緣外面;1 腳起 GND / PWR / SIG"
+1x8P 2.54mm 母座,"J3,J4",PinSocket_1x08_P2.54mm_Vertical,2,C27438,"SuperMini 插座:2.54 mm 單排 8P 母座,直插,高 8.5 mm(BOOMELE)。J3 左排、J4 右排,SuperMini 模組本身不用貼(客戶自己插)"

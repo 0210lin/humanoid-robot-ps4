@@ -15,6 +15,9 @@ b = pcbnew.LoadBoard(os.path.join(HERE, "ServoID_%s.kicad_pcb" % v))
 bb = b.GetBoardEdgesBoundingBox()
 BW, BH = round(bb.GetWidth() / 1e6 - 0.1, 1), round(bb.GetHeight() / 1e6 - 0.1, 1)
 smd = sorted(fp.GetReference() for fp in b.GetFootprints() if fp.GetAttributes() & pcbnew.FP_SMD)
+sys.path.insert(0, HERE)
+from tht_parts import THT
+tht = THT.get(v, [])          # 這一版要 JLCPCB 代焊的插件(排針 / 母座)
 HOLE_NAME = {"U2": "SuperMini", "J1": "電池焊點", "J2": "馬達焊點"}
 holes = {}
 for fp in sorted(b.GetFootprints(), key=lambda f: f.GetReference()):
@@ -47,6 +50,8 @@ with open(os.path.join(dest, "03_CPL_零件位置.csv"), "w", newline="", encodi
             rot_notes.append("%s(%s):KiCad %s° → 檔案內 %d°" % (r[0], r[2], r[5], new))
             r = r[:5] + [str(new)] + r[6:]
         w.writerow(r)
+    for t in tht:             # 插件:座標是焊孔中心,角度已經是 JLC 的方向
+        w.writerow([t[0], t[1], t[2], "%.4f" % t[4], "%.4f" % -t[5], str(t[6]), "top"])
 shutil.copy(os.path.join(fab, "preview_top.png"), os.path.join(dest, "07_預覽_上層.png"))
 shutil.copy(os.path.join(fab, "preview_bottom.png"), os.path.join(dest, "07_預覽_下層.png"))
 
@@ -76,6 +81,11 @@ with open(os.path.join(dest, "02_BOM_零件清單.csv"), "w", newline="", encodi
     w.writerow(rows[0] + ["Spec / 規格說明"])
     for r in rows[1:]:
         w.writerow(r[:4] + [LCSC.get(r[0], "")] + [SPEC.get(r[0], "")])
+    groups = collections.OrderedDict()
+    for t in tht:
+        groups.setdefault(t[3], []).append(t)
+    for lc, ts in groups.items():
+        w.writerow([ts[0][1], ",".join(t[0] for t in ts), ts[0][2], len(ts), lc, ts[0][7]])
 
 # 4 組裝圖
 K = r"C:\Program Files\KiCad\10.0\bin\python.exe"
@@ -120,7 +130,7 @@ open(os.path.join(dest, "05_板子規格與組裝說明.md"), "w", encoding="utf
 
 ## 組裝(SMT)/ Assembly
 - 只貼**頂層(Top side)**,%d 顆 SMD 零件:%s。
-- **不要貼:** U2(ESP32-C3 SuperMini 模組)、J1(電池焊點)、J2(馬達焊點)、H1~H4(M3 鎖孔)。這些是通孔焊盤 / 孔,由客戶自己焊。
+%s
 - 二極體 D1 D2 D3 有極性:組裝圖上紅色粗線那端是陰極(有橫線端)。U1%s 的 1 腳位置見組裝圖(紅點)。
 - 零件規格見 `02_BOM_零件清單.csv` 的 Spec 欄。LCSC 料號欄已填 JLCPCB / LCSC 料號(C 版實際下單、測試可用的那一組%s);給其他廠商時請依 Spec 欄對應。
 - 零件位置檔 `03_CPL_零件位置.csv`:座標單位 mm,Y 軸朝上(KiCad 輸出格式),Mid Y 為負值是正常的。
@@ -135,7 +145,13 @@ open(os.path.join(dest, "05_板子規格與組裝說明.md"), "w", encoding="utf
 6. `06_詢價信範本.txt`
 7. `07_預覽_上層.png` / `07_預覽_下層.png`
 8. `08_接線表_網路.csv`:每個網路接了哪些腳(給確認用)
-""" % (v, BW, BH, hole_txt, len(smd), " ".join(smd), "、Q1" if has_q else "",
+""" % (v, BW, BH, hole_txt, len(smd), " ".join(smd),
+       ("- **插件也請代焊(要選 Standard PCBA,Economic 不焊插件)**,都在頂層:" + "、".join("%s %s(%s)" % (t[0], t[1], t[3]) for t in tht) + "。\n"
+        "  - **J1、J2 是 90 度彎排針,針要朝板子下緣外面**(往內會撞到 Q1 和保險絲);請在擺放預覽確認方向。\n"
+        "  - J3、J4 是 SuperMini 的插座(兩條單排,相距 15.24 mm);SuperMini 模組本身不用貼,客戶自己插。\n"
+        "- **不要貼:** U2(ESP32-C3 SuperMini 模組)、H1~H4(M3 鎖孔)。") if tht else
+       "- **不要貼:** U2(ESP32-C3 SuperMini 模組)、J1(電池焊點)、J2(馬達焊點)、H1~H4(M3 鎖孔)。這些是通孔焊盤 / 孔,由客戶自己焊。",
+       "、Q1" if has_q else "",
        ";Q1 = C15127 是這版新增的" if has_q else "", ";".join(rot_notes),
        """
 ## 這一版和 C 版的差別 / Changes from version C
@@ -157,7 +173,7 @@ open(os.path.join(dest, "06_詢價信範本.txt"), "w", encoding="utf-8").write(
 
 【SMT 組裝】
 - 只貼頂層,共 %d 顆 SMD(%d 種料號):%s
-- SuperMini 模組與接線焊點由我自己焊,不用貼
+%s
 - 組裝數量:2 片(或 5 片)
 
 【想請教】
@@ -170,7 +186,9 @@ open(os.path.join(dest, "06_詢價信範本.txt"), "w", encoding="utf-8").write(
 檔案說明請看 `05_板子規格與組裝說明.md`。謝謝!
 
 (附件:01_Gerber和鑽孔.zip、02_BOM_零件清單.csv、03_CPL_零件位置.csv、04_組裝圖_零件編號與方向.png、05_板子規格與組裝說明.md)
-""" % (BW, BH, BW, BH, len(smd), len(rows) - 1, cat_txt))
+""" % (BW, BH, BW, BH, len(smd), len(rows) - 1, cat_txt,
+       ("- 插件也請代焊:" + "、".join("%s %s" % (t[0], t[1]) for t in tht) + "(J1、J2 是 90 度彎排針,針朝板子外面)\n- SuperMini 模組本身由我自己插,不用貼")
+       if tht else "- SuperMini 模組與接線焊點由我自己焊,不用貼"))
 
 # 8 接線表
 nets = collections.defaultdict(list)
